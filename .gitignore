@@ -1,0 +1,8 @@
+/target
+**/target
+/.tmp
+*.pem
+.DS_Store
+/.idea
+/.vscode
+**/*.swp

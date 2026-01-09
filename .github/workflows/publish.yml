@@ -1,0 +1,25 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      crate:
+        description: "Crate to publish"
+        required: true
+      version:
+        description: "Version to tag"
+        required: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: tag crate
+        run: scripts/tag_crate.sh ${{ github.event.inputs.crate }} ${{ github.event.inputs.version }}
+      - name: publish crate
+        run: cargo publish -p ${{ github.event.inputs.crate }} --locked

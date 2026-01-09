@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+title: "LLLV — Index Pack & Evidence (lllv-index)"
+authors:
+  - family-names: "Amarilho"
+    given-names: "Daniel"
+date-released: "2026-01-09"
+repository-code: "https://github.com/LogLine-Foundation/lllv-index"
+abstract: >
+  lllv-index fornece Index Pack com Merkle root e respostas de busca com
+  Evidence verificável (Merkle paths), com integração opcional a JSON✯Atomic.
+keywords: [retrieval, merkle, content addressing, BLAKE3, verifiable]

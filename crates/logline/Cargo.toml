@@ -1,0 +1,40 @@
+[package]
+name = "logline"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "LogLine: full stack bundle (TDLN + JSON✯Atomic + LogLine core + LLLV) with CLI."
+license = "MIT"
+repository = "https://github.com/LogLine-Foundation/logline-workspace"
+homepage = "https://logline.foundation"
+documentation = "https://docs.rs/logline"
+readme = "README.md"
+keywords = ["logline", "tdln", "bundle", "json-atomic", "lllv"]
+categories = ["cryptography", "data-structures", "algorithms"]
+exclude = [".github/**", "deny.toml", "SECURITY.md", "CODE_OF_CONDUCT.md", "CHANGELOG.md"]
+
+[dependencies]
+tdln-gate = { path = "../tdln-gate", version = "0.1.0", features = ["dv25", "ed25519"] }
+tdln-compiler = { path = "../tdln-compiler", version = "0.1.0", features = ["dv25", "ed25519"] }
+tdln-proof = { path = "../tdln-proof", version = "0.1.0", features = ["dv25", "ed25519"] }
+tdln-ast = { path = "../tdln-ast", version = "0.1.0" }
+json-atomic = { package = "json_atomic", path = "../../json_atomic", version = "0.1.0" }
+logline-core = { path = "../../logline-core", version = "0.1.1" }
+lllv-core = { path = "../../lllv-core", version = "0.1.0" }
+lllv-index = { path = "../../lllv-index", version = "0.1.0" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+hex = "0.4"
+
+[features]
+default = ["std"]
+std = []
+
+[package.metadata.docs.rs]
+features = ["std"]
+no-default-features = false
+all-features = true
+
+[[bin]]
+name = "logline"
+path = "src/main.rs"

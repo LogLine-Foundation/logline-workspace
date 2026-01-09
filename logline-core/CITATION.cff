@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+title: "Paper I: The LogLine Protocol — The Conceptual Atom of Verifiable Action"
+authors:
+  - family-names: "Amarilho"
+    given-names: "Daniel"
+date-released: "2026-01-08"
+type: article
+url: "https://github.com/LogLine-Foundation/logline-core/tree/main/docs/paper-i-logline-protocol.md"

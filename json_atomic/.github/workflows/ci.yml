@@ -1,0 +1,32 @@
+name: CI
+on:
+  push: { branches: ["main"] }
+  pull_request: {}
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: default (std)
+            cmd_fmt: cargo fmt --all -- --check
+            cmd_clippy: cargo clippy --all-targets --all-features -- -D warnings
+            cmd_test: cargo test --all-features
+          - name: no_std (alloc)
+            cmd_fmt: cargo fmt --all -- --check
+            cmd_clippy: cargo clippy --lib --no-default-features --features alloc -- -D warnings
+            cmd_test: cargo build --no-default-features --features alloc
+          - name: no_std (alloc+unicode)
+            cmd_fmt: cargo fmt --all -- --check
+            cmd_clippy: cargo clippy --lib --no-default-features --features "alloc,unicode" -- -D warnings
+            cmd_test: cargo build --no-default-features --features "alloc,unicode"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Fmt (${{ matrix.name }})
+        run: ${{ matrix.cmd_fmt }}
+      - name: Clippy (${{ matrix.name }})
+        run: ${{ matrix.cmd_clippy }}
+      - name: Tests/Build (${{ matrix.name }})
+        run: ${{ matrix.cmd_test }}

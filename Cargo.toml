@@ -1,0 +1,38 @@
+[workspace]
+members = [
+  "logline-core",
+  "json_atomic",
+  "lllv-core",
+  "lllv-index",
+  "crates/logline",
+  "crates/tdln-ast",
+  "crates/tdln-proof",
+  "crates/tdln-compiler",
+  "crates/tdln-gate",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+homepage = "https://logline.foundation"
+repository = "https://github.com/LogLine-Foundation/logline-workspace"
+documentation = "https://docs.rs"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.dependencies]
+blake3 = "1.5"
+hex = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+ed25519-dalek = { version = "2.1", features = ["pkcs8"] }
+
+[patch.crates-io]
+logline-core = { path = "logline-core" }
+json_atomic = { path = "json_atomic" }
+lllv-core = { path = "lllv-core" }
+lllv-index = { path = "lllv-index" }

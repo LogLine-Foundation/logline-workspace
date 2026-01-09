@@ -1,0 +1,11 @@
+[package]
+name = "verify-quality"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "verify_quality"
+path = "verify_quality.rs"
+
+[dependencies]
+walkdir = "2"

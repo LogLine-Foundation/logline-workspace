@@ -1,0 +1,12 @@
+name: License/Advisory Deny
+on:
+  push: {}
+  pull_request: {}
+jobs:
+  deny:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo install cargo-deny
+      - run: cargo deny check all

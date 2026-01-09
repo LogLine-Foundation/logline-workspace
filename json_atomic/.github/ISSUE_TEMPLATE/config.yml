@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Documentação
+    url: https://docs.rs/json_atomic
+    about: Consulte a documentação oficial no docs.rs
+  - name: 💬 Discussões
+    url: https://github.com/logline-foundation/json_atomic/discussions
+    about: Perguntas gerais e discussões
+  - name: 🔒 Segurança
+    url: https://github.com/logline-foundation/json_atomic/security
+    about: Reportar vulnerabilidades de segurança

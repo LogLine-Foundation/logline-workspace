@@ -1,0 +1,28 @@
+name: CI
+on:
+  push: { branches: ["main"] }
+  pull_request: {}
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+          - name: default (std)
+            fmt:  "cargo fmt --all -- --check"
+            clip: "cargo clippy --all-targets --all-features -- -D warnings"
+            test: "cargo test --all-features"
+          - name: no_std (alloc)
+            fmt:  "cargo fmt --all -- --check"
+            clip: "cargo clippy --lib --no-default-features --features alloc -- -D warnings"
+            test: "cargo build --no-default-features --features alloc"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Fmt
+        run: ${{ matrix.build.fmt }}
+      - name: Clippy
+        run: ${{ matrix.build.clip }}
+      - name: Tests/Build
+        run: ${{ matrix.build.test }}

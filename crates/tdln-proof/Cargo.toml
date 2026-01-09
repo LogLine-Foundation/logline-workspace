@@ -1,0 +1,39 @@
+[package]
+name = "tdln-proof"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+description = "TDLN — proof bundle (deterministic translation proof + optional DV25 signatures)."
+repository = "https://github.com/LogLine-Foundation/logline-workspace"
+homepage = "https://logline.foundation"
+readme = "README.md"
+keywords = ["tdln", "proof", "deterministic", "blake3", "ed25519"]
+categories = ["cryptography", "encoding"]
+documentation = "https://docs.rs/tdln-proof"
+exclude = [".github/**", "deny.toml", "SECURITY.md", "CODE_OF_CONDUCT.md", "CHANGELOG.md"]
+
+[features]
+default = ["std", "ed25519"]
+std = []
+alloc = []
+ed25519 = ["dep:ed25519-dalek"]
+dv25 = ["ed25519", "dep:logline-core"]
+
+[dependencies]
+tdln-ast = { version = "0.1.0", path = "../tdln-ast" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+blake3 = "1.5"
+hex = "0.4"
+thiserror = "1.0"
+ed25519-dalek = { version = "2.1", features = ["pkcs8"], optional = true }
+logline-core = { version = "0.1.1", optional = true }
+
+[dev-dependencies]
+rand = "0.8"
+
+[package.metadata.docs.rs]
+features = ["std", "ed25519"]
+no-default-features = false
+all-features = false

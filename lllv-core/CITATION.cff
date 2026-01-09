@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+title: "LLLV — The Retrieval Atom (lllv-core)"
+authors:
+  - family-names: "Amarilho"
+    given-names: "Daniel"
+date-released: "2026-01-09"
+repository-code: "https://github.com/LogLine-Foundation/lllv-core"
+abstract: >
+  lllv-core define a Vector Capsule com cabeçalho binário assinado e manifesto canônico
+  (JSON✯Atomic), endereçada por BLAKE3 e selada com Ed25519.
+keywords: [retrieval, vector, content addressing, BLAKE3, Ed25519]

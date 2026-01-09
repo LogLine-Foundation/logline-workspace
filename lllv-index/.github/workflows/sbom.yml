@@ -1,0 +1,15 @@
+name: SBOM
+on:
+  release:
+    types: [published]
+jobs:
+  sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo install cargo-cyclonedx
+      - run: cargo cyclonedx -o sbom.json
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: sbom.json

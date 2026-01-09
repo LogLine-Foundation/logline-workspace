@@ -1,0 +1,49 @@
+name: Quality Check
+
+on:
+  push:
+    branches: ["main"]
+  pull_request: {}
+  workflow_dispatch:
+    inputs:
+      crate:
+        description: 'Crate to check (leave empty for all)'
+        required: false
+        type: string
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        crate:
+          - logline-core
+          - json_atomic
+          - lllv-core
+          - lllv-index
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Run Quality Check (Shell)
+        run: |
+          if [ -d "${{ matrix.crate }}" ]; then
+            bash scripts/verify_quality.sh "${{ matrix.crate }}"
+          else
+            echo "⚠️  Diretório ${{ matrix.crate }} não encontrado, pulando..."
+          fi
+      
+      - name: Run Cargo Checks
+        working-directory: ${{ matrix.crate }}
+        if: matrix.crate != ''
+        run: |
+          if [ -f "Cargo.toml" ]; then
+            echo "🔍 Executando verificações de código..."
+            cargo fmt --all -- --check || exit 1
+            cargo clippy --all-targets --all-features -- -D warnings || echo "⚠️  Clippy warnings encontrados"
+            cargo test --all-features --no-fail-fast || exit 1
+            echo "✅ Verificações de código concluídas"
+          fi
