@@ -1,6 +1,10 @@
 name: Publish
 
 on:
+  push:
+    tags:
+      - "tdln-*-v*"
+      - "logline-v*"
   workflow_dispatch:
     inputs:
       crate:
@@ -19,7 +23,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Derive crate and version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "crate=${{ github.event.inputs.crate }}" >> "$GITHUB_ENV"
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
+          else
+            tag="${GITHUB_REF_NAME}"
+            crate="${tag%-v*}"
+            version="${tag##*-v}"
+            echo "crate=${crate}" >> "$GITHUB_ENV"
+            echo "version=${version}" >> "$GITHUB_ENV"
+          fi
       - name: tag crate
-        run: scripts/tag_crate.sh ${{ github.event.inputs.crate }} ${{ github.event.inputs.version }}
+        run: scripts/tag_crate.sh "${{ env.crate }}" "${{ env.version }}"
       - name: publish crate
-        run: cargo publish -p ${{ github.event.inputs.crate }} --locked
+        run: cargo publish -p "${{ env.crate }}" --locked
