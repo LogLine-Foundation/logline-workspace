@@ -9,12 +9,15 @@ members = [
   "crates/tdln-proof",
   "crates/tdln-compiler",
   "crates/tdln-gate",
+  "crates/tdln-brain",
   "crates/atomic-types",
   "crates/atomic-crypto",
   "crates/atomic-codec",
   "crates/atomic-ubl",
   "crates/atomic-sirp",
   "crates/atomic-runtime",
+  "crates/ubl-mcp",
+  "crates/ubl-office",
 ]
 exclude = [
   "fuzz",  # Requires nightly + cargo-fuzz

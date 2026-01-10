@@ -1,0 +1,42 @@
+[package]
+name = "ubl-mcp"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+description = "Model Context Protocol client/server with TDLN Gate enforcement for LogLine Agents."
+repository = "https://github.com/LogLine-Foundation/logline-workspace"
+homepage = "https://logline.foundation"
+readme = "README.md"
+keywords = ["mcp", "json-rpc", "agent", "security", "tools"]
+categories = ["api-bindings", "asynchronous"]
+documentation = "https://docs.rs/ubl-mcp"
+exclude = [".github/**", "deny.toml", "SECURITY.md", "CODE_OF_CONDUCT.md", "CHANGELOG.md"]
+
+[features]
+default = ["client", "server"]
+client = []
+server = []
+
+[dependencies]
+tdln-ast = { version = "0.1.1", path = "../tdln-ast" }
+tdln-gate = { version = "0.1.1", path = "../tdln-gate" }
+tdln-compiler = { version = "0.1.1", path = "../tdln-compiler" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+async-trait = "0.1"
+tracing = "0.1"
+tokio = { version = "1", features = ["io-std", "io-util", "sync", "macros", "rt"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+futures = "0.3"
+schemars = "0.8"
+anyhow = "1"
+bytes = "1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-util"] }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
