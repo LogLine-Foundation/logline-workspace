@@ -1,7 +1,7 @@
 //! DIM router that maps DIM codes to handlers and runs before/after middleware.
 use crate::mw::Middleware;
 use anyhow::Result;
-use atomic_types::Dim;
+use ubl_types::Dim;
 use std::{collections::HashMap, sync::Arc};
 
 /// Função de tratamento (DIM → bytes).

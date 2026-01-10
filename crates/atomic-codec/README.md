@@ -1,7 +1,7 @@
-# atomic-codec
+# ubl-codec
 
-[![crates.io](https://img.shields.io/crates/v/atomic-codec.svg)](https://crates.io/crates/atomic-codec)
-[![docs.rs](https://docs.rs/atomic-codec/badge.svg)](https://docs.rs/atomic-codec)
+[![crates.io](https://img.shields.io/crates/v/ubl-codec.svg)](https://crates.io/crates/ubl-codec)
+[![docs.rs](https://docs.rs/ubl-codec/badge.svg)](https://docs.rs/ubl-codec)
 ![MSRV](https://img.shields.io/badge/MSRV-1.75%2B-informational)
 ![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)
 
@@ -22,8 +22,8 @@ Canonical encoding for the **LogLine Workspace** — two complementary codecs:
 - **Frames**: `typ (u8) + len (varint) + payload`
 
 ```rust
-use atomic_codec::{Encoder, Decoder, encode_frame, decode_frame};
-use atomic_crypto::blake3_cid;
+use ubl_codec::{Encoder, Decoder, encode_frame, decode_frame};
+use ubl_crypto::blake3_cid;
 
 let cid = blake3_cid(b"hello");
 let mut enc = Encoder::new();
@@ -43,7 +43,7 @@ let msg = dec.str().unwrap();
 
 ```toml
 [dependencies]
-atomic-codec = "0.3"
+ubl-codec = "0.3"
 ```
 
 ## Segurança & Limites

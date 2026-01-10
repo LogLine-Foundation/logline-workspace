@@ -1,4 +1,4 @@
-use atomic_types::{AppId, Cid32, Dim, Intent, PublicKeyBytes, SignatureBytes};
+use ubl_types::{AppId, Cid32, Dim, Intent, PublicKeyBytes, SignatureBytes};
 use core::str::FromStr;
 
 #[test]

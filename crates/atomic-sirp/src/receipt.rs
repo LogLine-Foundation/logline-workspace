@@ -1,5 +1,5 @@
 //! Receipt signing and verification for SIRP capsules.
-use atomic_crypto::{b64_decode, b64_encode, sign_cid_hex, verify_cid_hex, SecretKey};
+use ubl_crypto::{b64_decode, b64_encode, sign_cid_hex, verify_cid_hex, SecretKey};
 use ed25519_dalek::VerifyingKey;
 use serde::{Deserialize, Serialize};
 

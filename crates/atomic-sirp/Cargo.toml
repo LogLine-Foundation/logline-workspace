@@ -1,15 +1,15 @@
 [package]
-name = "atomic-sirp"
-version = "0.3.1"
+name = "ubl-sirp"
+version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-keywords = ["logline", "sirp", "http", "hmac", "capsule"]
+keywords = ["ubl", "sirp", "ledger", "hmac", "capsule"]
 categories = ["network-programming", "asynchronous", "cryptography"]
-description = "SIRP HTTP stable: capsule+receipt, HMAC, idempotency, server."
+description = "UBL SIRP: HTTP capsule+receipt, HMAC, idempotency, server for Universal Business Ledger."
 rust-version = "1.75"
 homepage.workspace = true
 repository.workspace = true
-documentation = "https://docs.rs/atomic-sirp"
+documentation = "https://docs.rs/ubl-sirp"
 
 [features]
 default = ["std", "http", "server", "sqlite", "signing"]
@@ -29,10 +29,10 @@ base64 = "0.22"
 blake3 = "1"
 ed25519-dalek = "2"
 thiserror = "1"
-atomic-types = { path = "../atomic-types" }
-atomic-codec = { path = "../atomic-codec" }
-atomic-crypto = { path = "../atomic-crypto" }
-json_atomic = { path = "../json_atomic" }
+ubl-types = { path = "../atomic-types", version = "0.1.0" }
+ubl-codec = { path = "../atomic-codec", version = "0.1.0" }
+ubl-crypto = { path = "../atomic-crypto", version = "0.1.0" }
+json_atomic = { path = "../json_atomic", version = "0.1.1" }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"], optional = true }
 http = { version = "1", optional = true }
 axum = { version = "0.7", optional = true }

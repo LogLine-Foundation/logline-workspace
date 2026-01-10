@@ -17,7 +17,7 @@ exclude = [".github/**", "deny.toml", "SECURITY.md", "CODE_OF_CONDUCT.md", "CHAN
 default = ["std", "signing"]
 std = []
 server = ["dep:axum", "dep:http"]
-signing = ["atomic-ubl/signing"]
+signing = ["ubl-ledger/signing"]
 
 [dependencies]
 tdln-gate = { path = "../tdln-gate", version = "0.1.1", features = ["dv25", "ed25519"] }
@@ -40,11 +40,11 @@ regex = "1"
 colored = "2"
 axum = { version = "0.7", optional = true }
 http = { version = "1", optional = true }
-atomic-types = { path = "../atomic-types", version = "0.3.1" }
-atomic-codec = { path = "../atomic-codec", version = "0.3.1" }
-atomic-crypto = { path = "../atomic-crypto", version = "0.3.1" }
-atomic-ubl = { path = "../atomic-ubl", version = "0.3.1" }
-atomic-sirp = { path = "../atomic-sirp", version = "0.3.1" }
+ubl-types = { path = "../atomic-types", version = "0.1.0" }
+ubl-codec = { path = "../atomic-codec", version = "0.1.0" }
+ubl-crypto = { path = "../atomic-crypto", version = "0.1.0" }
+ubl-ledger = { path = "../atomic-ubl", version = "0.1.0" }
+ubl-sirp = { path = "../atomic-sirp", version = "0.1.0" }
 
 [package.metadata.docs.rs]
 features = ["std"]

@@ -182,7 +182,7 @@ pub fn verify_many(vk: &VerifyingKey, items: &[(&str, &str)]) -> usize {
 // atomic-types integration: Cid32, PublicKeyBytes, SignatureBytes
 // ══════════════════════════════════════════════════════════════════════════════
 
-use atomic_types::{Cid32, PublicKeyBytes, SignatureBytes};
+use ubl_types::{Cid32, PublicKeyBytes, SignatureBytes};
 
 /// Hash BLAKE3 de 32 bytes → `Cid32`.
 ///

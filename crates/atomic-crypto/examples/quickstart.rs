@@ -1,6 +1,6 @@
 //! Quick-start example for atomic-crypto with atomic-types integration.
 
-use atomic_crypto::{blake3_cid, derive_public_bytes, sign_bytes, verify_bytes};
+use ubl_crypto::{blake3_cid, derive_public_bytes, sign_bytes, verify_bytes};
 
 fn main() {
     // BLAKE3 → Cid32

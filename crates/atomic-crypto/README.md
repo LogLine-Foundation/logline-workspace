@@ -1,7 +1,7 @@
-# atomic-crypto
+# ubl-crypto
 
-[![crates.io](https://img.shields.io/crates/v/atomic-crypto.svg)](https://crates.io/crates/atomic-crypto)
-[![docs.rs](https://docs.rs/atomic-crypto/badge.svg)](https://docs.rs/atomic-crypto)
+[![crates.io](https://img.shields.io/crates/v/ubl-crypto.svg)](https://crates.io/crates/ubl-crypto)
+[![docs.rs](https://docs.rs/ubl-crypto/badge.svg)](https://docs.rs/ubl-crypto)
 ![MSRV](https://img.shields.io/badge/MSRV-1.75%2B-informational)
 ![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)
 
@@ -11,13 +11,13 @@ Crypto primitives for the **LogLine Workspace**.
 
 ### Hashing
 - **`blake3_hex`** — BLAKE3 hash → hex string
-- **`blake3_cid`** — BLAKE3 hash → `Cid32` (atomic-types)
+- **`blake3_cid`** — BLAKE3 hash → `Cid32` (ubl-types)
 - **`blake3_cid_chunks`** — Incremental BLAKE3 → `Cid32`
 
 ### Ed25519 Signatures
 - **`SecretKey`**, **`Keypair`** — Key management with zeroize
 - **`sign_cid_hex`**, **`verify_cid_hex`** — Sign/verify CID hex strings
-- **`sign_bytes`**, **`verify_bytes`** — Sign/verify with `atomic-types` wrappers
+- **`sign_bytes`**, **`verify_bytes`** — Sign/verify with `ubl-types` wrappers
 - **`derive_public_bytes`** — Derive `PublicKeyBytes` from secret seed
 
 ### HMAC
@@ -33,13 +33,13 @@ Crypto primitives for the **LogLine Workspace**.
 
 ```toml
 [dependencies]
-atomic-crypto = "0.3"
+ubl-crypto = "0.3"
 ```
 
 ## Quick Example
 
 ```rust
-use atomic_crypto::{blake3_cid, derive_public_bytes, sign_bytes, verify_bytes};
+use ubl_crypto::{blake3_cid, derive_public_bytes, sign_bytes, verify_bytes};
 
 // BLAKE3 → Cid32
 let cid = blake3_cid(b"hello");

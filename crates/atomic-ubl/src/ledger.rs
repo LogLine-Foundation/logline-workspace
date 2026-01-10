@@ -13,7 +13,7 @@
 //! - **Metrics**: optional via `metrics` feature
 
 use crate::UBL_DOMAIN_SIGN;
-use atomic_types::{Cid32, PublicKeyBytes, SignatureBytes};
+use ubl_types::{Cid32, PublicKeyBytes, SignatureBytes};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
@@ -141,7 +141,7 @@ impl LedgerEntry {
     ) -> Result<Self, LedgerError> {
         let canon =
             json_atomic::canonize(intent_value).map_err(|e| LedgerError::Canon(format!("{e:?}")))?;
-        let cid = atomic_crypto::blake3_cid(&canon);
+        let cid = ubl_crypto::blake3_cid(&canon);
         Ok(Self {
             ts: OffsetDateTime::now_utc()
                 .format(&Rfc3339)
@@ -158,10 +158,10 @@ impl LedgerEntry {
     /// Signs the entry with domain `UBL:LEDGER:v1` + CID.
     #[cfg(feature = "signing")]
     #[must_use]
-    pub fn sign(mut self, sk: &atomic_crypto::SecretKey) -> Self {
-        let pk = atomic_crypto::derive_public_bytes(&sk.0);
+    pub fn sign(mut self, sk: &ubl_crypto::SecretKey) -> Self {
+        let pk = ubl_crypto::derive_public_bytes(&sk.0);
         let msg = sign_message(&self.cid);
-        let sig = atomic_crypto::sign_bytes(&msg, &sk.0);
+        let sig = ubl_crypto::sign_bytes(&msg, &sk.0);
         self.pubkey = Some(pk);
         self.signature = Some(sig);
         self
@@ -174,7 +174,7 @@ impl LedgerEntry {
     /// Returns error if CID mismatch or signature invalid.
     pub fn verify(&self) -> Result<(), LedgerError> {
         // 1) CID check
-        let cid_check = atomic_crypto::blake3_cid(&self.intent);
+        let cid_check = ubl_crypto::blake3_cid(&self.intent);
         if cid_check != self.cid {
             return Err(LedgerError::CidMismatch);
         }
@@ -185,7 +185,7 @@ impl LedgerEntry {
                 #[cfg(feature = "signing")]
                 {
                     let msg = sign_message(&self.cid);
-                    if !atomic_crypto::verify_bytes(&msg, pk, sig) {
+                    if !ubl_crypto::verify_bytes(&msg, pk, sig) {
                         return Err(LedgerError::SigInvalid);
                     }
                 }
@@ -598,7 +598,7 @@ mod tests {
     #[cfg(feature = "signing")]
     #[test]
     fn signed_roundtrip() -> Result<(), LedgerError> {
-        use atomic_crypto::Keypair;
+        use ubl_crypto::Keypair;
 
         let kp = Keypair::generate();
         let intent = json!({"intent":"Freeze","id":"X"});

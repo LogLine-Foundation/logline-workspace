@@ -1,5 +1,5 @@
 //! UBL NDJSON event schema with signatures and linkage.
-use atomic_types::{ActorId, AppId, NodeId, TenantId, TraceId};
+use ubl_types::{ActorId, AppId, NodeId, TenantId, TraceId};
 use serde::{Deserialize, Serialize};
 
 /// Evento do UBL (NDJSON).

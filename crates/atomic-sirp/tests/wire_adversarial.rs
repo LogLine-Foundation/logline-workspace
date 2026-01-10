@@ -8,14 +8,14 @@
 //! - Invalid signatures
 //! - Duplicate fields
 
-use atomic_sirp::{
+use ubl_sirp::{
     decode_frame, encode_frame, CanonIntent, SirpFrame, SirpError,
     SIRP_MAGIC, SIRP_VERSION, FLAG_SIGNED,
 };
 
 fn dummy_intent() -> CanonIntent {
     let bytes = b"{\"test\":true}".to_vec();
-    let cid = atomic_crypto::blake3_cid(&bytes);
+    let cid = ubl_crypto::blake3_cid(&bytes);
     CanonIntent { cid, bytes }
 }
 
@@ -184,7 +184,7 @@ fn reject_signed_flag_without_signature() {
     let intent = dummy_intent();
     let mut f = SirpFrame::unsigned(intent);
     f.flags |= FLAG_SIGNED;
-    f.pubkey = Some(atomic_types::PublicKeyBytes([0u8; 32]));
+    f.pubkey = Some(ubl_types::PublicKeyBytes([0u8; 32]));
     // No signature
     let enc = encode_frame(&f);
     let result = decode_frame(&enc);
@@ -199,7 +199,7 @@ fn reject_wrong_pubkey_length() {
     frame.push(FLAG_SIGNED);
     
     // Valid CID
-    let cid = atomic_crypto::blake3_cid(b"{\"test\":true}");
+    let cid = ubl_crypto::blake3_cid(b"{\"test\":true}");
     frame.push(0x01); // T_CID32
     frame.push(32);
     frame.extend_from_slice(&cid.0);
@@ -227,7 +227,7 @@ fn reject_wrong_signature_length() {
     frame.push(FLAG_SIGNED);
     
     // Valid CID
-    let cid = atomic_crypto::blake3_cid(b"{\"test\":true}");
+    let cid = ubl_crypto::blake3_cid(b"{\"test\":true}");
     frame.push(0x01); // T_CID32
     frame.push(32);
     frame.extend_from_slice(&cid.0);
@@ -255,7 +255,7 @@ fn reject_wrong_signature_length() {
 #[cfg(feature = "signing")]
 #[test]
 fn reject_invalid_signature_bytes() {
-    use atomic_crypto::Keypair;
+    use ubl_crypto::Keypair;
     
     let intent = dummy_intent();
     let kp = Keypair::generate();
@@ -275,7 +275,7 @@ fn reject_invalid_signature_bytes() {
 #[cfg(feature = "signing")]
 #[test]
 fn reject_wrong_pubkey_for_signature() {
-    use atomic_crypto::Keypair;
+    use ubl_crypto::Keypair;
     
     let intent = dummy_intent();
     let kp1 = Keypair::generate();
@@ -283,7 +283,7 @@ fn reject_wrong_pubkey_for_signature() {
     
     let mut f = SirpFrame::unsigned(intent).sign(&kp1.sk);
     // Replace pubkey with different key
-    f.pubkey = Some(atomic_crypto::derive_public_bytes(&kp2.sk.0));
+    f.pubkey = Some(ubl_crypto::derive_public_bytes(&kp2.sk.0));
     
     let enc = encode_frame(&f);
     let result = decode_frame(&enc);
@@ -357,7 +357,7 @@ fn roundtrip_preserves_extra_field() {
 #[test]
 fn empty_intent_bytes_are_handled() {
     let bytes = b"{}".to_vec(); // Minimal valid JSON
-    let cid = atomic_crypto::blake3_cid(&bytes);
+    let cid = ubl_crypto::blake3_cid(&bytes);
     let intent = CanonIntent { cid, bytes };
     
     let f = SirpFrame::unsigned(intent);
@@ -382,7 +382,7 @@ mod proptests {
             // Use json_atomic to canonicalize
             let v: serde_json::Value = serde_json::from_str(&json).unwrap();
             let bytes = json_atomic::canonize(&v).unwrap();
-            let cid = atomic_crypto::blake3_cid(&bytes);
+            let cid = ubl_crypto::blake3_cid(&bytes);
             CanonIntent { cid, bytes }
         })
     }
@@ -445,7 +445,7 @@ mod proptests {
         /// Signed frames must survive roundtrip.
         #[test]
         fn roundtrip_signed_frames(intent in arb_intent()) {
-            use atomic_crypto::Keypair;
+            use ubl_crypto::Keypair;
             
             let kp = Keypair::generate();
             let f = SirpFrame::unsigned(intent).sign(&kp.sk);

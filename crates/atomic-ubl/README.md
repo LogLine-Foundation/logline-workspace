@@ -1,4 +1,4 @@
-# atomic-ubl 0.3.1
+# ubl-ledger 0.3.1
 
 *P3 entregue*: `UblWriterAsync` (tokio, mpsc), WAL simples (`*.wal`), verificação com `strict_chain`, zstd feature.  
 *P4 (roadmap)*: mirror R2, Merkle root/anchor, compaction, tail HTTP.

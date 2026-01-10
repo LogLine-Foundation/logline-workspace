@@ -6,7 +6,7 @@
 //! - Truncated varints
 //! - Malformed tag sequences
 
-use atomic_codec::binary::*;
+use ubl_codec::binary::*;
 
 #[test]
 fn reject_frame_with_huge_declared_len() {

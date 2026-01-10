@@ -11,11 +11,11 @@
 //!
 //! This tests cross-crate integration without mocking.
 
-use atomic_crypto::Keypair;
-use atomic_sirp::{
+use ubl_crypto::Keypair;
+use ubl_sirp::{
     decode_frame, encode_frame, CanonIntent, SirpFrame, FLAG_SIGNED, SIRP_VERSION,
 };
-use atomic_ubl::{LedgerEntry, SimpleLedgerReader, SimpleLedgerWriter};
+use ubl_ledger::{LedgerEntry, SimpleLedgerReader, SimpleLedgerWriter};
 use serde_json::{json, Value};
 use tempfile::NamedTempFile;
 
@@ -37,14 +37,14 @@ fn full_pipeline_unsigned() {
     // Stage 2: Canonicalize (json_atomic)
     // ═══════════════════════════════════════════════════════════════════════════
     let canon_bytes = json_atomic::canonize(&original).expect("canonize");
-    let cid = atomic_crypto::blake3_cid(&canon_bytes);
+    let cid = ubl_crypto::blake3_cid(&canon_bytes);
     
     // Verify canonicalization is deterministic
     let canon_bytes_2 = json_atomic::canonize(&original).expect("canonize again");
     assert_eq!(canon_bytes, canon_bytes_2, "Canonicalization not deterministic");
     
     // Verify CID is deterministic
-    let cid_2 = atomic_crypto::blake3_cid(&canon_bytes_2);
+    let cid_2 = ubl_crypto::blake3_cid(&canon_bytes_2);
     assert_eq!(cid, cid_2, "CID not deterministic");
     
     // ═══════════════════════════════════════════════════════════════════════════
@@ -152,7 +152,7 @@ fn full_pipeline_signed() {
     // Canonicalize
     // ═══════════════════════════════════════════════════════════════════════════
     let canon_bytes = json_atomic::canonize(&original).expect("canonize");
-    let cid = atomic_crypto::blake3_cid(&canon_bytes);
+    let cid = ubl_crypto::blake3_cid(&canon_bytes);
     
     // ═══════════════════════════════════════════════════════════════════════════
     // SIRP Frame (signed)
@@ -244,8 +244,8 @@ fn key_order_invariance_across_pipeline() {
     assert_eq!(c1, c2, "Canonical bytes differ for same content");
     
     // CIDs must match
-    let cid1 = atomic_crypto::blake3_cid(&c1);
-    let cid2 = atomic_crypto::blake3_cid(&c2);
+    let cid1 = ubl_crypto::blake3_cid(&c1);
+    let cid2 = ubl_crypto::blake3_cid(&c2);
     assert_eq!(cid1, cid2, "CIDs differ for same content");
     
     // SIRP frames must match
@@ -288,7 +288,7 @@ fn nested_objects_sorted_correctly() {
     assert!(a_pos < z_pos, "outer_a should come before outer_z");
     
     // Round-trip through SIRP and UBL
-    let cid = atomic_crypto::blake3_cid(&canon);
+    let cid = ubl_crypto::blake3_cid(&canon);
     let frame = SirpFrame::unsigned(CanonIntent { cid: cid.clone(), bytes: canon.clone() });
     let wire = encode_frame(&frame);
     let decoded = decode_frame(&wire).expect("decode");
@@ -365,7 +365,7 @@ fn stress_pipeline() {
             
             // Full pipeline
             let canon = json_atomic::canonize(&intent).expect("canonize");
-            let cid = atomic_crypto::blake3_cid(&canon);
+            let cid = ubl_crypto::blake3_cid(&canon);
             
             let frame = SirpFrame::unsigned(CanonIntent { cid: cid.clone(), bytes: canon });
             let wire = encode_frame(&frame);

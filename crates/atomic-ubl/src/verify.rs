@@ -1,7 +1,7 @@
 //! Verification helpers for UBL files and chains (signature, CID, prev-link).
 use crate::event::UblEvent;
 use anyhow::{anyhow, Result};
-use atomic_crypto::{b64_decode, blake3_hex, verify_cid_hex};
+use ubl_crypto::{b64_decode, blake3_hex, verify_cid_hex};
 use ed25519_dalek::VerifyingKey;
 use std::{
     fs::File,

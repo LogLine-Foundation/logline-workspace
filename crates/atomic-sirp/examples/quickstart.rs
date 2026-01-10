@@ -1,6 +1,6 @@
 //! Quickstart example for SIRP wire protocol.
 
-use atomic_sirp::{canon_intent_from_value, decode_frame, encode_frame, SirpFrame};
+use ubl_sirp::{canon_intent_from_value, decode_frame, encode_frame, SirpFrame};
 use serde_json::json;
 
 fn main() {

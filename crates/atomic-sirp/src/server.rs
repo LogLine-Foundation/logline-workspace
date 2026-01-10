@@ -4,7 +4,7 @@ use crate::receipt::sign_receipt;
 #[cfg(feature = "server")]
 use anyhow::Result;
 #[cfg(feature = "server")]
-use atomic_crypto::{b64_encode, blake3_hex, hmac_verify, key_id_v1, SecretKey};
+use ubl_crypto::{b64_encode, blake3_hex, hmac_verify, key_id_v1, SecretKey};
 #[cfg(feature = "server")]
 use axum::http::{HeaderMap, StatusCode};
 #[cfg(feature = "server")]
@@ -105,7 +105,7 @@ async fn handle_capsule(
                 capsule_cid_hex: cid.clone(),
                 ok: true,
                 msg: Some("already_done".into()),
-                sig_b64: b64_encode(&atomic_crypto::sign_cid_hex(&state.sk, &cid)),
+                sig_b64: b64_encode(&ubl_crypto::sign_cid_hex(&state.sk, &cid)),
                 pk_b64: b64_encode(state.vk.as_bytes()),
                 kid: state.kid.clone(),
                 already_done: true,

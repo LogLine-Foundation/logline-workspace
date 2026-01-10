@@ -261,7 +261,7 @@ fn cmd_sirp(sub: SirpCmd) -> Result<()> {
             let v: serde_json::Value = serde_json::from_str(&data)?;
             let canon = json_atomic::canonize(&v)
                 .map_err(|e| anyhow::anyhow!("canonize: {:?}", e))?;
-            let cid = atomic_crypto::blake3_cid(&canon);
+            let cid = ubl_crypto::blake3_cid(&canon);
             
             // Build frame: TLV with CID + canonical bytes
             let mut frame = Vec::new();
@@ -277,7 +277,7 @@ fn cmd_sirp(sub: SirpCmd) -> Result<()> {
             // Sign if sk provided
             #[cfg(feature = "signing")]
             if let Some(sk_b64) = sk {
-                use atomic_crypto::{b64_decode, SecretKey, derive_public_bytes, sign_bytes};
+                use ubl_crypto::{b64_decode, SecretKey, derive_public_bytes, sign_bytes};
                 let sk_bytes = b64_decode(&sk_b64)?;
                 let sk = SecretKey(sk_bytes.try_into().map_err(|_| anyhow::anyhow!("bad sk len"))?);
                 let pk = derive_public_bytes(&sk.0);
@@ -392,7 +392,7 @@ fn cmd_sirp(sub: SirpCmd) -> Result<()> {
             
             // Verify CID
             let cid = cid.ok_or_else(|| anyhow::anyhow!("no CID in frame"))?;
-            let computed = atomic_crypto::blake3_cid(&payload);
+            let computed = ubl_crypto::blake3_cid(&payload);
             if computed.0 != cid {
                 anyhow::bail!("CID mismatch: expected {}, got {}", hex::encode(cid), hex::encode(computed.0));
             }
@@ -406,9 +406,9 @@ fn cmd_sirp(sub: SirpCmd) -> Result<()> {
                 msg.extend_from_slice(domain);
                 msg.extend_from_slice(&cid);
                 
-                let pk_typed = atomic_types::PublicKeyBytes(pk);
-                let sig_typed = atomic_types::SignatureBytes(sig);
-                if atomic_crypto::verify_bytes(&msg, &pk_typed, &sig_typed) {
+                let pk_typed = ubl_types::PublicKeyBytes(pk);
+                let sig_typed = ubl_types::SignatureBytes(sig);
+                if ubl_crypto::verify_bytes(&msg, &pk_typed, &sig_typed) {
                     println!("✅ Signature verified: pk={}", hex::encode(pk));
                 } else {
                     anyhow::bail!("❌ Signature invalid");
@@ -456,7 +456,7 @@ async fn cmd_send(
     let mut capsule: Vec<u8> = if let Some(j) = json {
         let data = fs::read_to_string(&j).with_context(|| format!("read json {}", j.display()))?;
         let v: serde_json::Value = serde_json::from_str(&data)?;
-        atomic_codec::to_canon_vec(&v)?
+        ubl_codec::to_canon_vec(&v)?
     } else if let Some(b) = bytes {
         fs::read(&b).with_context(|| format!("read bytes {}", b.display()))?
     } else {
@@ -471,7 +471,7 @@ async fn cmd_send(
         capsule = with_hdr;
     }
     let key = hmac_key.as_deref().map(str::as_bytes);
-    let resp = atomic_sirp::transport_http::post_capsule_hmac(url, &capsule, key).await?;
+    let resp = ubl_sirp::transport_http::post_capsule_hmac(url, &capsule, key).await?;
     if let Some(p) = out {
         fs::write(&p, &resp)?;
         println!("written {len} bytes to {}", p.display(), len = resp.len());
@@ -509,12 +509,12 @@ fn cmd_ubl(sub: UblCmd) -> Result<()> {
             let data = fs::read_to_string(&input)
                 .with_context(|| format!("read intent {}", input.display()))?;
             let intent: serde_json::Value = serde_json::from_str(&data)?;
-            let mut entry = atomic_ubl::LedgerEntry::unsigned(&intent, actor, b"")
+            let mut entry = ubl_ledger::LedgerEntry::unsigned(&intent, actor, b"")
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
 
             #[cfg(feature = "signing")]
             if let Some(sk_b64) = sk {
-                use atomic_crypto::{b64_decode, SecretKey};
+                use ubl_crypto::{b64_decode, SecretKey};
                 let bytes = b64_decode(&sk_b64)?;
                 let sk = SecretKey(bytes.try_into().map_err(|_| anyhow::anyhow!("bad sk len"))?);
                 entry = entry.sign(&sk);
@@ -524,7 +524,7 @@ fn cmd_ubl(sub: UblCmd) -> Result<()> {
                 anyhow::bail!("signing feature not enabled");
             }
 
-            let mut w = atomic_ubl::SimpleLedgerWriter::open_append(&ledger)
+            let mut w = ubl_ledger::SimpleLedgerWriter::open_append(&ledger)
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
             w.append(&entry).map_err(|e| anyhow::anyhow!("{e}"))?;
             w.sync().map_err(|e| anyhow::anyhow!("{e}"))?;
@@ -533,7 +533,7 @@ fn cmd_ubl(sub: UblCmd) -> Result<()> {
             Ok(())
         }
         UblCmd::Info { path } => {
-            let reader = atomic_ubl::SimpleLedgerReader::from_path(&path)
+            let reader = ubl_ledger::SimpleLedgerReader::from_path(&path)
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
             let mut count = 0u64;
             let mut last_cid: Option<String> = None;
@@ -550,7 +550,7 @@ fn cmd_ubl(sub: UblCmd) -> Result<()> {
             Ok(())
         }
         UblCmd::Verify { path } => {
-            let n = atomic_ubl::verify::verify_file(&path)?;
+            let n = ubl_ledger::verify::verify_file(&path)?;
             println!("verified {n} events");
             Ok(())
         }
@@ -558,7 +558,7 @@ fn cmd_ubl(sub: UblCmd) -> Result<()> {
 }
 
 fn cmd_keygen(out_secret: Option<PathBuf>, out_public: Option<PathBuf>) -> Result<()> {
-    use atomic_crypto::{b64_encode, Keypair};
+    use ubl_crypto::{b64_encode, Keypair};
     let kp = Keypair::generate();
     let sk_b64 = b64_encode(&kp.sk.0);
     let pk_b64 = b64_encode(kp.vk.as_bytes());
@@ -576,7 +576,7 @@ fn cmd_keygen(out_secret: Option<PathBuf>, out_public: Option<PathBuf>) -> Resul
 fn cmd_tail(path: PathBuf, kind: Option<String>, pretty: bool) -> Result<()> {
     let filter = kind.map(|k| Regex::new(&k).unwrap());
     if path.is_file() {
-        atomic_ubl::tail_file(path, |ev| print_ev(&ev, pretty, filter.as_ref()))?;
+        ubl_ledger::tail_file(path, |ev| print_ev(&ev, pretty, filter.as_ref()))?;
     } else {
         for e in WalkDir::new(path)
             .min_depth(1)
@@ -584,7 +584,7 @@ fn cmd_tail(path: PathBuf, kind: Option<String>, pretty: bool) -> Result<()> {
             .filter_map(Result::ok)
         {
             if e.file_type().is_file() {
-                for res in atomic_ubl::UblReader::iter_file(e.path())? {
+                for res in ubl_ledger::UblReader::iter_file(e.path())? {
                     let ev = res?;
                     print_ev(&ev, pretty, filter.as_ref());
                 }
@@ -594,7 +594,7 @@ fn cmd_tail(path: PathBuf, kind: Option<String>, pretty: bool) -> Result<()> {
     Ok(())
 }
 
-fn print_ev(ev: &atomic_ubl::event::UblEvent, pretty: bool, re: Option<&Regex>) {
+fn print_ev(ev: &ubl_ledger::event::UblEvent, pretty: bool, re: Option<&Regex>) {
     if let Some(r) = re {
         if !r.is_match(&ev.kind) {
             return;
@@ -629,7 +629,7 @@ async fn cmd_bench(
 ) -> Result<()> {
     let payload = fs::read_to_string(&json)?;
     let v: serde_json::Value = serde_json::from_str(&payload)?;
-    let canon = atomic_codec::to_canon_vec(&v)?;
+    let canon = ubl_codec::to_canon_vec(&v)?;
     let dim_val = parse_dim(&dim)?;
     let mut capsule = Vec::with_capacity(2 + canon.len());
     capsule.push(((dim_val >> 8) & 0xFF) as u8);
@@ -648,7 +648,7 @@ async fn cmd_bench(
             let mut ok = 0usize;
             for _ in 0..rounds {
                 let t0 = Instant::now();
-                if atomic_sirp::transport_http::post_capsule_hmac(&url, &capsule, key.as_deref())
+                if ubl_sirp::transport_http::post_capsule_hmac(&url, &capsule, key.as_deref())
                     .await
                     .is_ok()
                 {
@@ -703,9 +703,9 @@ async fn cmd_dev_server(
     sqlite: Option<PathBuf>,
     hmac_key: Option<String>,
 ) -> Result<()> {
-    use atomic_crypto::{b64_decode, SecretKey};
-    use atomic_sirp::server as sirp_srv;
-    use atomic_sirp::server::FnProcessor;
+    use ubl_crypto::{b64_decode, SecretKey};
+    use ubl_sirp::server as sirp_srv;
+    use ubl_sirp::server::FnProcessor;
     use std::net::SocketAddr;
     use tokio::net::TcpListener;
 
@@ -716,10 +716,10 @@ async fn cmd_dev_server(
                 .map_err(|_| anyhow::anyhow!("bad sk len"))?,
         )
     } else {
-        atomic_crypto::Keypair::generate().sk
+        ubl_crypto::Keypair::generate().sk
     };
     let idem = if let Some(p) = sqlite {
-        Some(atomic_sirp::idempotency::SqliteIdem::open(
+        Some(ubl_sirp::idempotency::SqliteIdem::open(
             p.to_string_lossy().as_ref(),
         )?)
     } else {

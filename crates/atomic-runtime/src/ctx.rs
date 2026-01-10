@@ -1,6 +1,6 @@
 //! Application context wrapper for emitting UBL events during DIM processing.
 use anyhow::Result;
-use atomic_ubl::UblWriter;
+use ubl_ledger::UblWriter;
 use serde::Serialize;
 
 /// Contexto do app: escritor do ledger.

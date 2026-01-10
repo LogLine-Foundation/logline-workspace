@@ -1,7 +1,7 @@
 //! Quick-start example for atomic-codec binary TLV.
 
-use atomic_codec::{decode_frame, encode_frame, Decoder, Encoder};
-use atomic_crypto::blake3_cid;
+use ubl_codec::{decode_frame, encode_frame, Decoder, Encoder};
+use ubl_crypto::blake3_cid;
 
 fn main() {
     // Create a CID from data

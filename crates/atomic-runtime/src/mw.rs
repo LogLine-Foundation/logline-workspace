@@ -1,6 +1,6 @@
 //! Middleware traits and budget tracking for DIM processing.
 use anyhow::Result;
-use atomic_types::{ActorId, Dim};
+use ubl_types::{ActorId, Dim};
 use std::collections::HashMap;
 
 /// Middleware simples (before/after).

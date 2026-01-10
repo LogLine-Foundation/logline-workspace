@@ -12,7 +12,7 @@ where
     TRes: Serialize,
     F: Fn(TReq) -> Result<TRes>,
 {
-    let req: TReq = atomic_codec::from_canon_slice(bytes)?;
+    let req: TReq = ubl_codec::from_canon_slice(bytes)?;
     let res = f(req)?;
-    Ok(atomic_codec::to_canon_vec(&res)?)
+    Ok(ubl_codec::to_canon_vec(&res)?)
 }

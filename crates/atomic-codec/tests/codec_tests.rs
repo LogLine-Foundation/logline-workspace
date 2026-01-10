@@ -1,4 +1,4 @@
-use atomic_codec::*;
+use ubl_codec::*;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -65,10 +65,10 @@ fn errors_surface_cleanly() {
 // Binary TLV codec tests
 // ══════════════════════════════════════════════════════════════════════════════
 
-use atomic_codec::binary::{
+use ubl_codec::binary::{
     decode_frame, decode_varint_u64, encode_frame, encode_varint_u64, Decoder, Encoder,
 };
-use atomic_types::{Cid32, PublicKeyBytes, SignatureBytes};
+use ubl_types::{Cid32, PublicKeyBytes, SignatureBytes};
 
 #[test]
 fn binary_varint_roundtrip() {

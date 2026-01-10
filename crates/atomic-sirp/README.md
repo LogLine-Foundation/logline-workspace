@@ -1,4 +1,4 @@
-# atomic-sirp 0.3.1
+# ubl-sirp 0.3.1
 
 *P3 entregue*: **HMAC Edge↔Lab**, idempotência SQLite c/ TTL, recibo assinado, client com timeout/backoff, cabeçalhos de métricas.  
 *P4 (roadmap)*: libp2p QUIC/Noise + Kademlia, TTL/PoW na cápsula, HTTP2 fallback.

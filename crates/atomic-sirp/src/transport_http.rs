@@ -31,7 +31,7 @@ pub async fn post_capsule_hmac(
             .header("content-type", "application/octet-stream")
             .body(capsule_bytes.to_vec());
         if let Some(k) = hmac_key {
-            let tag = atomic_crypto::hmac_sign(k, capsule_bytes);
+            let tag = ubl_crypto::hmac_sign(k, capsule_bytes);
             req = req.header("x-sirp-hmac", tag);
         }
         match req.send().await {

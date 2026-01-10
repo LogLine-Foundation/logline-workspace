@@ -4,9 +4,9 @@ use crate::{
     paths::{daily_dir, ts_rfc3339},
 };
 use anyhow::Result;
-use atomic_codec as codec;
-use atomic_crypto::{b64_encode, blake3_hex, key_id_v1, sign_cid_hex, SecretKey};
-use atomic_types::{ActorId, AppId, NodeId, TenantId, TraceId};
+use ubl_codec as codec;
+use ubl_crypto::{b64_encode, blake3_hex, key_id_v1, sign_cid_hex, SecretKey};
+use ubl_types::{ActorId, AppId, NodeId, TenantId, TraceId};
 use ed25519_dalek::SigningKey;
 use serde::Serialize;
 use std::path::{Path, PathBuf};

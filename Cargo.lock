@@ -128,119 +128,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "atomic-codec"
-version = "0.3.1"
-dependencies = [
- "atomic-crypto",
- "atomic-types",
- "blake3",
- "json_atomic",
- "serde",
- "serde_json",
- "serde_yaml",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "atomic-crypto"
-version = "0.3.1"
-dependencies = [
- "atomic-types",
- "base64",
- "blake3",
- "bs58",
- "ed25519-dalek",
- "hmac",
- "rand_core 0.6.4",
- "serde_json",
- "sha2",
- "thiserror 1.0.69",
- "zeroize",
-]
-
-[[package]]
-name = "atomic-runtime"
-version = "0.3.1"
-dependencies = [
- "anyhow",
- "atomic-codec",
- "atomic-crypto",
- "atomic-types",
- "atomic-ubl",
- "json_atomic",
- "logline-core",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "atomic-sirp"
-version = "0.3.1"
-dependencies = [
- "anyhow",
- "atomic-codec",
- "atomic-crypto",
- "atomic-types",
- "axum",
- "base64",
- "blake3",
- "chrono",
- "ed25519-dalek",
- "hex",
- "http",
- "json_atomic",
- "proptest",
- "rand 0.8.5",
- "reqwest",
- "rusqlite",
- "serde",
- "serde_bytes",
- "serde_json",
- "thiserror 1.0.69",
- "tokio",
-]
-
-[[package]]
-name = "atomic-types"
-version = "0.3.1"
-dependencies = [
- "cfg-if",
- "hex",
- "regex",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "ulid",
-]
-
-[[package]]
-name = "atomic-ubl"
-version = "0.3.1"
-dependencies = [
- "anyhow",
- "atomic-codec",
- "atomic-crypto",
- "atomic-types",
- "base64",
- "blake3",
- "ed25519-dalek",
- "fs2",
- "json_atomic",
- "logline-core",
- "metrics",
- "once_cell",
- "parking_lot",
- "proptest",
- "serde",
- "serde_bytes",
- "serde_json",
- "tempfile",
- "thiserror 1.0.69",
- "time",
- "tokio",
-]
-
-[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1371,11 +1258,6 @@ name = "logline"
 version = "0.1.1"
 dependencies = [
  "anyhow",
- "atomic-codec",
- "atomic-crypto",
- "atomic-sirp",
- "atomic-types",
- "atomic-ubl",
  "axum",
  "clap",
  "clap_complete",
@@ -1395,6 +1277,11 @@ dependencies = [
  "tdln-proof",
  "tempfile",
  "tokio",
+ "ubl-codec",
+ "ubl-crypto",
+ "ubl-ledger",
+ "ubl-sirp",
+ "ubl-types",
  "walkdir",
 ]
 
@@ -2502,6 +2389,119 @@ name = "typenum"
 version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "562d481066bde0658276a35467c4af00bdc6ee726305698a55b86e61d7ad82bb"
+
+[[package]]
+name = "ubl-codec"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "json_atomic",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "thiserror 1.0.69",
+ "ubl-crypto",
+ "ubl-types",
+]
+
+[[package]]
+name = "ubl-crypto"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "blake3",
+ "bs58",
+ "ed25519-dalek",
+ "hmac",
+ "rand_core 0.6.4",
+ "serde_json",
+ "sha2",
+ "thiserror 1.0.69",
+ "ubl-types",
+ "zeroize",
+]
+
+[[package]]
+name = "ubl-ledger"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64",
+ "blake3",
+ "ed25519-dalek",
+ "fs2",
+ "json_atomic",
+ "logline-core",
+ "metrics",
+ "once_cell",
+ "parking_lot",
+ "proptest",
+ "serde",
+ "serde_bytes",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "time",
+ "tokio",
+ "ubl-codec",
+ "ubl-crypto",
+ "ubl-types",
+]
+
+[[package]]
+name = "ubl-runtime"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "json_atomic",
+ "logline-core",
+ "serde",
+ "serde_json",
+ "ubl-codec",
+ "ubl-crypto",
+ "ubl-ledger",
+ "ubl-types",
+]
+
+[[package]]
+name = "ubl-sirp"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64",
+ "blake3",
+ "chrono",
+ "ed25519-dalek",
+ "hex",
+ "http",
+ "json_atomic",
+ "proptest",
+ "rand 0.8.5",
+ "reqwest",
+ "rusqlite",
+ "serde",
+ "serde_bytes",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "ubl-codec",
+ "ubl-crypto",
+ "ubl-types",
+]
+
+[[package]]
+name = "ubl-types"
+version = "0.1.0"
+dependencies = [
+ "cfg-if",
+ "hex",
+ "regex",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "ulid",
+]
 
 [[package]]
 name = "ulid"

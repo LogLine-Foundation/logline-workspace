@@ -1,6 +1,6 @@
 //! HTTP helpers for DIM capsules encoded as octet streams.
 use anyhow::{ensure, Result};
-use atomic_types::Dim;
+use ubl_types::Dim;
 /// Extrai DIM do corpo HTTP (octet-stream DIM+payload)
 ///
 /// # Errors

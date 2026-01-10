@@ -31,13 +31,13 @@ pub use wire::{
 /// Convenience: build a `CanonIntent` from any JSON value.
 ///
 /// Internally uses `json_atomic::canonize` for deterministic bytes
-/// and `atomic_crypto::blake3_cid` for the CID.
+/// and `ubl_crypto::blake3_cid` for the CID.
 ///
 /// # Errors
 ///
 /// Returns error if canonicalization fails.
 pub fn canon_intent_from_value(v: &serde_json::Value) -> Result<CanonIntent, SirpError> {
     let bytes = json_atomic::canonize(v).map_err(|e| SirpError::Canon(format!("{e:?}")))?;
-    let cid = atomic_crypto::blake3_cid(&bytes);
+    let cid = ubl_crypto::blake3_cid(&bytes);
     Ok(CanonIntent { cid, bytes })
 }

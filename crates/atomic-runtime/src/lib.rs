@@ -21,8 +21,8 @@ pub use typed::handle_typed;
 pub use web::parse_http_octets;
 
 use anyhow::{anyhow, Result};
-use atomic_crypto::blake3_hex;
-use atomic_types::{ActorId, Dim};
+use ubl_crypto::blake3_hex;
+use ubl_types::{ActorId, Dim};
 use events::{IntentCompleted, IntentReceived};
 
 /// Processa cápsula com middlewares e budgets.

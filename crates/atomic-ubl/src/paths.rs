@@ -1,5 +1,5 @@
 //! Path helpers for UBL layout and timestamp formatting.
-use atomic_types::{AppId, NodeId, TenantId};
+use ubl_types::{AppId, NodeId, TenantId};
 use std::path::{Path, PathBuf};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 

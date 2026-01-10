@@ -1,14 +1,14 @@
 [package]
-name = "atomic-crypto"
-version = "0.3.1"
+name = "ubl-crypto"
+version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-description = "Crypto helpers: SK wrapper, KID, HMAC, did:key, batch verify, atomic-types integration."
+description = "UBL crypto helpers: SK wrapper, KID, HMAC, did:key, batch verify for Universal Business Ledger."
 rust-version = "1.75"
 homepage.workspace = true
 repository.workspace = true
-documentation = "https://docs.rs/atomic-crypto"
-keywords = ["logline", "crypto", "ed25519", "hmac", "did-key"]
+documentation = "https://docs.rs/ubl-crypto"
+keywords = ["ubl", "ledger", "ed25519", "hmac", "blake3"]
 categories = ["cryptography", "encoding", "data-structures"]
 
 [dependencies]
@@ -21,7 +21,7 @@ rand_core = { version = "0.6", features = ["getrandom"] }
 hmac = "0.12"
 sha2 = "0.10"
 bs58 = "0.4"
-atomic-types = { path = "../atomic-types", version = "0.3" }
+ubl-types = { path = "../atomic-types", version = "0.1.0" }
 
 [dev-dependencies]
 serde_json = "1.0"

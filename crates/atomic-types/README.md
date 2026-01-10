@@ -1,11 +1,13 @@
-# atomic-types
+# ubl-types
 
-[![crates.io](https://img.shields.io/crates/v/atomic-types.svg)](https://crates.io/crates/atomic-types)
-[![docs.rs](https://docs.rs/atomic-types/badge.svg)](https://docs.rs/atomic-types)
+[![crates.io](https://img.shields.io/crates/v/ubl-types.svg)](https://crates.io/crates/ubl-types)
+[![docs.rs](https://docs.rs/ubl-types/badge.svg)](https://docs.rs/ubl-types)
 ![MSRV](https://img.shields.io/badge/MSRV-1.75%2B-informational)
 ![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)
 
-Shared canonical types for the **LogLine Workspace**.
+Shared canonical types for **Universal Business Ledger (UBL)**.
+
+> **Note**: UBL = Universal Business Ledger (not OASIS Universal Business Language).
 
 ## Features
 
@@ -26,16 +28,16 @@ Shared canonical types for the **LogLine Workspace**.
 
 ```toml
 [dependencies]
-atomic-types = "0.3"
+ubl-types = "0.1"
 
 # Optional features
-atomic-types = { version = "0.3", features = ["ulid", "strict"] }
+ubl-types = { version = "0.1", features = ["ulid", "strict"] }
 ```
 
 ## Quick Example
 
 ```rust
-use atomic_types::{Cid32, Dim, Intent, AppId};
+use ubl_types::{Cid32, Dim, Intent, AppId};
 use core::str::FromStr;
 
 // Dimension parsing

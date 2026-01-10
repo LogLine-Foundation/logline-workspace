@@ -1,23 +1,23 @@
 [package]
-name = "atomic-runtime"
-version = "0.3.1"
+name = "ubl-runtime"
+version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-description = "Atomic runtime: router+middlewares, budgets, UBL logging."
+description = "UBL runtime: router+middlewares, budgets, ledger logging for Universal Business Ledger."
 rust-version = "1.75"
 homepage.workspace = true
 repository.workspace = true
-documentation = "https://docs.rs/atomic-runtime"
-keywords = ["logline", "atomic", "runtime", "router", "middleware"]
+documentation = "https://docs.rs/ubl-runtime"
+keywords = ["ubl", "ledger", "runtime", "router", "middleware"]
 categories = ["network-programming", "asynchronous", "data-structures"]
 
 [dependencies]
 anyhow = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-atomic-types = "0.3.1"
-atomic-codec = "0.3.1"
-atomic-crypto = "0.3.1"
-atomic-ubl = "0.3.1"
+ubl-types = { path = "../atomic-types", version = "0.1.0" }
+ubl-codec = { path = "../atomic-codec", version = "0.1.0" }
+ubl-crypto = { path = "../atomic-crypto", version = "0.1.0" }
+ubl-ledger = { path = "../atomic-ubl", version = "0.1.0" }
 logline-core = { path = "../logline-core", version = "0.1.1" }
 json_atomic = { path = "../json_atomic", version = "0.1.1" }

@@ -12,7 +12,7 @@
 //! - [`MAX_FRAME_LEN`]: Hard limit on frame payload (~1 MiB) to prevent DoS
 //! - [`MAX_VARINT_BYTES`]: Maximum bytes for varint encoding (10) to prevent overflow
 
-use atomic_types::{Cid32, PublicKeyBytes, SignatureBytes};
+use ubl_types::{Cid32, PublicKeyBytes, SignatureBytes};
 use thiserror::Error;
 
 // ══════════════════════════════════════════════════════════════════════════════

@@ -1,4 +1,4 @@
-use atomic_crypto::*;
+use ubl_crypto::*;
 use ed25519_dalek::{Signature, Signer, Verifier};
 
 const fn fixed_secret(byte: u8) -> SecretKey {

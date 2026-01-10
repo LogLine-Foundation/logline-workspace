@@ -39,21 +39,21 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "1.0"
 ed25519-dalek = { version = "2.1", features = ["pkcs8"] }
-atomic-types = "0.3"
-atomic-crypto = "0.3"
-atomic-codec = "0.3"
-atomic-ubl = "0.3"
-atomic-sirp = "0.3"
-atomic-runtime = "0.3"
+ubl-types = "0.1"
+ubl-crypto = "0.1"
+ubl-codec = "0.1"
+ubl-ledger = "0.1"
+ubl-sirp = "0.1"
+ubl-runtime = "0.1"
 
 [patch.crates-io]
 logline-core = { path = "crates/logline-core" }
 json_atomic = { path = "crates/json_atomic" }
 lllv-core = { path = "crates/lllv-core" }
 lllv-index = { path = "crates/lllv-index" }
-atomic-types = { path = "crates/atomic-types" }
-atomic-crypto = { path = "crates/atomic-crypto" }
-atomic-codec = { path = "crates/atomic-codec" }
-atomic-ubl = { path = "crates/atomic-ubl" }
-atomic-sirp = { path = "crates/atomic-sirp" }
-atomic-runtime = { path = "crates/atomic-runtime" }
+ubl-types = { path = "crates/atomic-types" }
+ubl-crypto = { path = "crates/atomic-crypto" }
+ubl-codec = { path = "crates/atomic-codec" }
+ubl-ledger = { path = "crates/atomic-ubl" }
+ubl-sirp = { path = "crates/atomic-sirp" }
+ubl-runtime = { path = "crates/atomic-runtime" }

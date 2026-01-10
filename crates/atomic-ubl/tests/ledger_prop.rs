@@ -7,7 +7,7 @@
 //! - Multiple concurrent readers
 //! - Large batches of entries
 
-use atomic_ubl::{LedgerEntry, LedgerError, SimpleLedgerReader, SimpleLedgerWriter};
+use ubl_ledger::{LedgerEntry, LedgerError, SimpleLedgerReader, SimpleLedgerWriter};
 use proptest::prelude::*;
 use serde_json::{json, Value};
 use std::io::{BufReader, Cursor};
@@ -170,7 +170,7 @@ proptest! {
 #[cfg(feature = "signing")]
 mod signing_tests {
     use super::*;
-    use atomic_crypto::Keypair;
+    use ubl_crypto::Keypair;
 
     proptest! {
         #![proptest_config(ProptestConfig::with_cases(100))]
@@ -218,7 +218,7 @@ mod signing_tests {
                 .sign(&kp1.sk);
             
             // Replace pubkey with different key
-            e.pubkey = Some(atomic_crypto::derive_public_bytes(&kp2.sk.0));
+            e.pubkey = Some(ubl_crypto::derive_public_bytes(&kp2.sk.0));
             
             prop_assert!(matches!(e.verify(), Err(LedgerError::SigInvalid)));
         }
@@ -278,7 +278,7 @@ fn reject_partial_signature_pubkey_only() {
     // Pubkey without signature
     let intent = json!({"test": "value"});
     let mut e = LedgerEntry::unsigned(&intent, None, b"").unwrap();
-    e.pubkey = Some(atomic_types::PublicKeyBytes([0u8; 32]));
+    e.pubkey = Some(ubl_types::PublicKeyBytes([0u8; 32]));
     
     let result = e.verify();
     assert!(matches!(result, Err(LedgerError::SigMissing)));
@@ -289,7 +289,7 @@ fn reject_partial_signature_sig_only() {
     // Signature without pubkey
     let intent = json!({"test": "value"});
     let mut e = LedgerEntry::unsigned(&intent, None, b"").unwrap();
-    e.signature = Some(atomic_types::SignatureBytes([0u8; 64]));
+    e.signature = Some(ubl_types::SignatureBytes([0u8; 64]));
     
     let result = e.verify();
     assert!(matches!(result, Err(LedgerError::SigMissing)));

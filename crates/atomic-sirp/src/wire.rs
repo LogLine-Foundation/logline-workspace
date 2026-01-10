@@ -3,10 +3,10 @@
 //! Uses `atomic-codec::binary` for TLV encoding with `atomic-types` primitives.
 //! Canonicalization via `json_atomic` ensures deterministic CID.
 
-use atomic_codec::binary::{
+use ubl_codec::binary::{
     decode_varint_u64, encode_varint_u64, BinaryCodecError, T_BYTES, T_CID32, T_PUBKEY32, T_SIG64,
 };
-use atomic_types::{Cid32, PublicKeyBytes, SignatureBytes};
+use ubl_types::{Cid32, PublicKeyBytes, SignatureBytes};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -94,8 +94,8 @@ impl SirpFrame {
 
     /// Signs the frame (adds FLAG_SIGNED, pubkey, signature).
     #[cfg(feature = "signing")]
-    pub fn sign(mut self, sk: &atomic_crypto::SecretKey) -> Self {
-        use atomic_crypto::{derive_public_bytes, sign_bytes};
+    pub fn sign(mut self, sk: &ubl_crypto::SecretKey) -> Self {
+        use ubl_crypto::{derive_public_bytes, sign_bytes};
         self.flags |= FLAG_SIGNED;
         self.pubkey = Some(derive_public_bytes(&sk.0));
         let msg = sign_message(self.version, self.flags, &self.intent.cid);
@@ -111,7 +111,7 @@ impl SirpFrame {
     /// Returns error if CID mismatch or signature invalid.
     pub fn verify(&self) -> Result<(), SirpError> {
         // 1) CID check
-        let cid_check = atomic_crypto::blake3_cid(&self.intent.bytes);
+        let cid_check = ubl_crypto::blake3_cid(&self.intent.bytes);
         if cid_check != self.intent.cid {
             return Err(SirpError::CidMismatch);
         }
@@ -126,7 +126,7 @@ impl SirpFrame {
             let msg = sign_message(self.version, self.flags, &self.intent.cid);
             #[cfg(feature = "signing")]
             {
-                use atomic_crypto::verify_bytes;
+                use ubl_crypto::verify_bytes;
                 if !verify_bytes(&msg, pk, sig) {
                     return Err(SirpError::Signature("invalid signature".into()));
                 }
@@ -319,7 +319,7 @@ mod tests {
 
     fn canon(v: serde_json::Value) -> CanonIntent {
         let bytes = json_atomic::canonize(&v).unwrap();
-        let cid = atomic_crypto::blake3_cid(&bytes);
+        let cid = ubl_crypto::blake3_cid(&bytes);
         CanonIntent { cid, bytes }
     }
 
@@ -345,7 +345,7 @@ mod tests {
     #[cfg(feature = "signing")]
     #[test]
     fn roundtrip_signed() {
-        use atomic_crypto::Keypair;
+        use ubl_crypto::Keypair;
 
         let intent = canon(json!({"intent":"Freeze","id":"X"}));
         let kp = Keypair::generate();
