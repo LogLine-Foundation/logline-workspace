@@ -11,6 +11,9 @@ pub enum OfficeError {
     /// Policy gate error.
     #[error("policy gate error: {0}")]
     Gate(String),
+    /// Policy violation — action blocked by Gate.
+    #[error("policy violation: {0}")]
+    PolicyViolation(String),
     /// Tool execution error.
     #[error("tool execution error: {0}")]
     Tool(String),
@@ -20,6 +23,18 @@ pub enum OfficeError {
     /// Configuration error.
     #[error("config error: {0}")]
     Config(String),
+    /// Context window exceeded.
+    #[error("context overflow: {0}")]
+    ContextOverflow(String),
+    /// Quota exceeded (tokens, decisions, daily limit).
+    #[error("quota exceeded: {0}")]
+    QuotaExceeded(String),
+    /// Ledger append failed.
+    #[error("ledger error: {0}")]
+    Ledger(String),
+    /// Provider error (LLM API).
+    #[error("provider error: {0}")]
+    Provider(String),
     /// Shutdown requested.
     #[error("shutdown requested")]
     Shutdown,
@@ -33,12 +48,21 @@ impl From<std::io::Error> for OfficeError {
 
 impl From<tdln_brain::BrainError> for OfficeError {
     fn from(e: tdln_brain::BrainError) -> Self {
-        Self::Brain(e.to_string())
+        match e {
+            tdln_brain::BrainError::ContextOverflow => {
+                Self::ContextOverflow("brain context overflow".into())
+            }
+            tdln_brain::BrainError::Provider(msg) => Self::Provider(msg),
+            other => Self::Brain(other.to_string()),
+        }
     }
 }
 
 impl From<ubl_mcp::McpError> for OfficeError {
     fn from(e: ubl_mcp::McpError) -> Self {
-        Self::Tool(e.to_string())
+        match e {
+            ubl_mcp::McpError::PolicyViolation(msg) => Self::PolicyViolation(msg),
+            other => Self::Tool(other.to_string()),
+        }
     }
 }

@@ -4,7 +4,7 @@
 
 use serde_json::json;
 use tdln_brain::MockBackend;
-use ubl_office::{Office, OfficeConfig};
+use ubl_office::{DreamConfig, Office, OfficeConfig, SessionMode, SessionType};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -19,7 +19,12 @@ async fn main() -> anyhow::Result<()> {
     // 2) Configure the office
     let config = OfficeConfig {
         tenant_id: "demo-agent".into(),
-        max_steps_before_dream: 5,
+        session_type: SessionType::Work,
+        session_mode: SessionMode::Commitment,
+        dream: DreamConfig {
+            dream_every_n_cycles: 5,
+            dream_min_interval_secs: 1,
+        },
         step_pause_ms: 100,
         max_consecutive_errors: 3,
         ..Default::default()
