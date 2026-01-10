@@ -20,13 +20,16 @@ server = []
 transport-stdio = ["dep:tokio", "dep:tokio-util", "dep:futures"]
 transport-http = ["dep:reqwest"]
 gate-tdln = ["dep:tdln-gate", "dep:tdln-ast", "dep:tdln-compiler"]
-audit = []
+audit = ["dep:ubl-ledger", "dep:parking_lot", "dep:hex"]
 
 [dependencies]
 # LogLine / UBL stack (optional for gate-tdln)
 tdln-gate = { version = "0.1.1", path = "../tdln-gate", optional = true }
 tdln-ast = { version = "0.1.1", path = "../tdln-ast", optional = true }
 tdln-compiler = { version = "0.1.1", path = "../tdln-compiler", optional = true }
+ubl-ledger = { version = "0.1.0", path = "../ubl-ledger", optional = true }
+parking_lot = { version = "0.12", optional = true }
+hex = { version = "0.4", optional = true }
 
 # Core
 serde = { version = "1.0", features = ["derive"] }

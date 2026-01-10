@@ -8,4 +8,10 @@
 
 pub mod stdio;
 
+#[cfg(feature = "transport-http")]
+pub mod http;
+
 pub use stdio::StdioTransport;
+
+#[cfg(feature = "transport-http")]
+pub use http::{HttpConfig, HttpTransport, SharedHttpTransport};

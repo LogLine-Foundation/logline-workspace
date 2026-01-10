@@ -3,7 +3,7 @@
 //! Demonstrates: Office creation, open, step, dream cycle
 
 use serde_json::json;
-use tdln_brain::MockBackend;
+use tdln_brain::providers::local::MockBackend;
 use ubl_office::{DreamConfig, Office, OfficeConfig, SessionMode, SessionType};
 
 #[tokio::main]

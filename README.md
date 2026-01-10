@@ -20,7 +20,7 @@
 - `atomic-types`: shared IDs/time/error helpers.
 - `atomic-crypto`: BLAKE3, Ed25519, HMAC, key IDs.
 - `atomic-codec`: JSON✯Atomic canonical encode/decode glue.
-- `atomic-ubl`: UBL NDJSON writer with rotation/signing.
+- `ubl-ledger`: UBL NDJSON writer with rotation/signing.
 - `atomic-sirp`: network capsule + receipt flow (HTTP).
 - `atomic-runtime`: DIM router/handlers with UBL logging.
 - `atomic-cli`: CLI for sending capsules, UBL ops, validation.

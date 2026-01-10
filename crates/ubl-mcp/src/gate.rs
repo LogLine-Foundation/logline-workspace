@@ -215,7 +215,7 @@ impl PolicyGate for DenylistGate {
 #[cfg(feature = "gate-tdln")]
 pub mod tdln_impl {
     use super::*;
-    use tdln_gate::{decide as tdln_decide, PolicyCtx};
+    use tdln_gate::PolicyCtx;
 
     /// Gate that uses TDLN policy evaluation.
     pub struct TdlnGate {

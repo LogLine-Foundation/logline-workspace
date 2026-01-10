@@ -178,29 +178,72 @@ impl<T: AuditSink> AuditSink for std::sync::Arc<T> {
 #[cfg(feature = "audit")]
 pub mod ubl_impl {
     use super::*;
+    use parking_lot::Mutex;
+    use std::path::PathBuf;
+    use ubl_ledger::{LedgerEntry, SimpleLedgerWriter};
 
-    /// Audit sink that writes to a UBL Ledger.
+    /// Audit sink that writes tool calls to a UBL Ledger (NDJSON with CID).
     pub struct UblAudit {
-        // In a real implementation, this would hold a LedgerWriter
-        // For now we just log
-        _path: std::path::PathBuf,
+        writer: Mutex<SimpleLedgerWriter>,
+        path: PathBuf,
     }
 
     impl UblAudit {
-        /// Create a new UBL audit sink.
+        /// Create a new UBL audit sink at the given path.
+        ///
+        /// # Errors
+        ///
+        /// Returns error if the file cannot be opened.
+        pub fn new(path: impl Into<PathBuf>) -> Result<Self, anyhow::Error> {
+            let path = path.into();
+            let writer = SimpleLedgerWriter::open_append(&path)?;
+            Ok(Self {
+                writer: Mutex::new(writer),
+                path,
+            })
+        }
+
+        /// Returns the ledger file path.
         #[must_use]
-        pub fn new(path: impl Into<std::path::PathBuf>) -> Self {
-            Self { _path: path.into() }
+        pub fn path(&self) -> &PathBuf {
+            &self.path
+        }
+
+        /// Sync the ledger to disk.
+        pub fn sync(&self) -> Result<(), anyhow::Error> {
+            self.writer.lock().sync()?;
+            Ok(())
         }
     }
 
     #[async_trait]
     impl AuditSink for UblAudit {
         async fn record(&self, record: ToolCallRecord) -> Result<(), anyhow::Error> {
-            // In a real implementation, this would append to the ledger
-            // with canonical JSON and CID computation
-            let json = serde_json::to_string(&record)?;
-            tracing::debug!(record = json, "ubl_audit.record");
+            // Convert ToolCallRecord to JSON Value for the ledger
+            let intent = serde_json::json!({
+                "type": "mcp.tool_call",
+                "tool": record.tool,
+                "args": record.args,
+                "gate": record.gate_decision,
+                "outcome": record.outcome,
+                "result": record.result,
+                "error": record.error,
+                "latency_ms": record.latency_ms,
+            });
+
+            // Create a ledger entry (unsigned, actor = "mcp")
+            let entry = LedgerEntry::unsigned(&intent, Some("mcp".into()), b"")
+                .map_err(|e| anyhow::anyhow!("{e}"))?;
+
+            // Append to ledger
+            self.writer.lock().append(&entry)?;
+
+            tracing::debug!(
+                cid = %hex::encode(&entry.cid.0[..8]),
+                tool = record.tool,
+                "ubl_audit.record"
+            );
+
             Ok(())
         }
     }

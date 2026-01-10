@@ -1,39 +1,45 @@
 [package]
 name = "tdln-brain"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.75"
 license = "MIT"
-description = "Cognitive layer for LogLine OS. Strict TDLN intent generation with reasoning separation."
+description = "Deterministic cognitive layer for LogLine OS: context → strictly-parsed TDLN intent."
 repository = "https://github.com/LogLine-Foundation/logline-workspace"
 homepage = "https://logline.foundation"
 readme = "README.md"
-keywords = ["llm", "agent", "tdln", "json", "inference"]
-categories = ["science::robotics", "api-bindings"]
+keywords = ["llm", "agent", "json", "parser", "deterministic"]
+categories = ["api-bindings", "science::robotics", "parsing"]
 documentation = "https://docs.rs/tdln-brain"
 exclude = [".github/**", "deny.toml", "SECURITY.md", "CODE_OF_CONDUCT.md", "CHANGELOG.md"]
 
 [features]
-default = []
-http-drivers = ["dep:reqwest"]
+default = ["parsing", "render", "providers-openai"]
+parsing = []
+render = []
+providers-openai = ["dep:reqwest"]
+providers-anthropic = ["dep:reqwest"]
+providers-local = []
 
 [dependencies]
+# LogLine stack
 tdln-ast = { version = "0.1.1", path = "../tdln-ast" }
+ubl-types = { version = "0.1.0", path = "../atomic-types" }
 json_atomic = { version = "0.1.1", path = "../json_atomic" }
+
+# core
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "1.0"
 async-trait = "0.1"
 tracing = "0.1"
-regex = "1"
-blake3 = "1.5"
+blake3 = "1"
 
-# optional http driver
+# http providers (feature-gated)
 reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"], optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
-hex = "0.4"
 anyhow = "1"
 
 [package.metadata.docs.rs]

@@ -4,7 +4,7 @@ use crate::{MemorySystem, Narrator, NarratorConfig, OfficeError};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
-use tdln_brain::{GenerationConfig, Message, NeuralBackend};
+use tdln_brain::{Brain, GenerationConfig, Message, NeuralBackend};
 use tokio::sync::watch;
 
 /// Agent lifecycle states.
@@ -159,7 +159,7 @@ pub struct OfficeMetrics {
 /// The Office runtime.
 pub struct Office<B: NeuralBackend> {
     config: OfficeConfig,
-    brain: B,
+    brain: Brain<B>,
     memory: MemorySystem,
     narrator: Narrator,
     metrics: OfficeMetrics,
@@ -189,7 +189,7 @@ impl<B: NeuralBackend> Office<B> {
 
         let office = Self {
             config,
-            brain,
+            brain: Brain::new(brain),
             memory: MemorySystem::new(),
             narrator: Narrator::new(narrator_config),
             metrics: OfficeMetrics::default(),
@@ -352,23 +352,20 @@ impl<B: NeuralBackend> Office<B> {
             ..GenerationConfig::default()
         };
 
-        // Decide: call brain
-        let messages = ctx.render();
-        let raw = self.brain.generate(&messages, &gen_config).await?;
-
-        // Track token usage
-        self.metrics.input_tokens_today += u64::from(raw.meta.input_tokens);
-        self.metrics.output_tokens_today += u64::from(raw.meta.output_tokens);
-
-        // Parse decision
-        let decision = tdln_brain::parser::parse_decision(&raw.content, raw.meta)?;
+        // Decide: call brain.reason() which does render → generate → parse
+        let decision = self.brain.reason(&ctx, &gen_config).await?;
+        
+        // Track token usage from decision metadata
+        self.metrics.input_tokens_today += u64::from(decision.meta.input_tokens);
+        self.metrics.output_tokens_today += u64::from(decision.meta.output_tokens);
         self.metrics.decisions_total += 1;
         self.metrics.decisions_since_dream += 1;
         self.metrics.consecutive_errors = 0;
 
         // Remember the decision
         self.memory.remember(format!("Decision: {}", decision.intent.kind));
-        self.history.push(Message::assistant(&raw.content));
+        // Add assistant response to history
+        self.history.push(Message::assistant(&serde_json::to_string(&decision.intent).unwrap_or_default()));
 
         // Increment narrator maintenance counter
         self.narrator.increment_maintenance_counter();
@@ -469,7 +466,7 @@ impl<B: NeuralBackend> Office<B> {
 mod tests {
     use super::*;
     use serde_json::json;
-    use tdln_brain::MockBackend;
+    use tdln_brain::providers::local::MockBackend;
 
     #[tokio::test]
     async fn state_transitions() {

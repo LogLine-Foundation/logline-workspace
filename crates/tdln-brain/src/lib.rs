@@ -1,43 +1,75 @@
 //! `tdln-brain` — Deterministic Cognitive Layer for LogLine OS
 //!
-//! NL → TDLN SemanticUnit → canonical bytes (via json_atomic) → happy Gate → verifiable execution.
+//! Render a narrative frame → call an LLM provider → extract **only** JSON →
+//! validate into `tdln_ast::SemanticUnit`.
 //!
-//! This crate is the cognitive shim between LLMs and the LogLine kernel. It renders
-//! a typed cognitive context, asks a model for an intent, and guarantees you can parse
-//! it into a [`tdln_ast::SemanticUnit`] with zero ambiguity.
+//! # Why
 //!
-//! # Invariants
-//!
-//! - **Strict output**: JSON that parses into a `SemanticUnit` or it's a hard error
-//! - **Kernel awareness**: constraints (policies) visible before generation
-//! - **Deterministic canon**: one source of truth for canonical bytes (delegates to `json_atomic`)
+//! - Prevent tool-call hallucinations
+//! - Enforce JSON-only outputs
+//! - Keep reasoning optional and separated
+//! - Make failures machine-legible
 //!
 //! # Example
 //!
-//! ```rust
-//! use tdln_brain::{CognitiveContext, Message, parser};
+//! ```rust,no_run
+//! use tdln_brain::{Brain, CognitiveContext, GenerationConfig};
+//! use tdln_brain::providers::local::LocalEcho;
 //!
+//! # async fn example() -> Result<(), tdln_brain::BrainError> {
+//! let brain = Brain::new(LocalEcho);
 //! let ctx = CognitiveContext {
-//!     system_directive: "You output VALID JSON for a TDLN SemanticUnit.".into(),
-//!     recall: vec!["User balance: 420".into()],
-//!     history: vec![Message::user("grant to alice amount 100")],
-//!     constraints: vec!["Never transfer > 500 without approval".into()],
+//!     system_directive: "You are a deterministic planner.".into(),
+//!     ..Default::default()
 //! };
-//!
-//! let messages = ctx.render();
-//! assert!(!messages.is_empty());
+//! let decision = brain.reason(&ctx, &GenerationConfig::default()).await?;
+//! println!("{:?}", decision.intent);
+//! # Ok(())
+//! # }
 //! ```
 
 #![forbid(unsafe_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub mod parser;
+pub mod prompt;
+pub mod providers;
+pub mod util;
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 // Re-export core AST type
 pub use tdln_ast::SemanticUnit;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Errors
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Errors from the cognitive layer.
+#[derive(Debug, Error)]
+pub enum BrainError {
+    /// Transport or API error from the provider.
+    #[error("provider error: {0}")]
+    Provider(String),
+    /// Model output was not valid TDLN JSON.
+    #[error("hallucination: invalid TDLN JSON: {0}")]
+    Hallucination(String),
+    /// Context window exceeded.
+    #[error("context window exceeded")]
+    ContextOverflow,
+    /// JSON parsing error.
+    #[error("parsing error: {0}")]
+    Parsing(String),
+    /// Prompt rendering error.
+    #[error("render error: {0}")]
+    Render(String),
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Types
+// ══════════════════════════════════════════════════════════════════════════════
 
 /// A chat message with role and content.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -51,28 +83,28 @@ pub struct Message {
 impl Message {
     /// Create a system message.
     #[must_use]
-    pub fn system(content: impl Into<String>) -> Self {
+    pub fn system(s: impl Into<String>) -> Self {
         Self {
             role: "system".into(),
-            content: content.into(),
+            content: s.into(),
         }
     }
 
     /// Create a user message.
     #[must_use]
-    pub fn user(content: impl Into<String>) -> Self {
+    pub fn user(s: impl Into<String>) -> Self {
         Self {
             role: "user".into(),
-            content: content.into(),
+            content: s.into(),
         }
     }
 
     /// Create an assistant message.
     #[must_use]
-    pub fn assistant(content: impl Into<String>) -> Self {
+    pub fn assistant(s: impl Into<String>) -> Self {
         Self {
             role: "assistant".into(),
-            content: content.into(),
+            content: s.into(),
         }
     }
 }
@@ -83,9 +115,9 @@ impl Message {
 /// and active constraints (policies) the model must respect.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct CognitiveContext {
-    /// The system directive (role + tone + boundaries).
+    /// The system directive (identity + constitution + role).
     pub system_directive: String,
-    /// Relevant memories for the current context.
+    /// Relevant memories for the current context (long-term recall).
     pub recall: Vec<String>,
     /// Recent conversation history.
     pub history: Vec<Message>,
@@ -93,50 +125,24 @@ pub struct CognitiveContext {
     pub constraints: Vec<String>,
 }
 
-impl CognitiveContext {
-    /// Render the context into a vector of messages suitable for LLM input.
-    ///
-    /// The system message packs:
-    /// - Your directive
-    /// - Constraints (kernel policies)
-    /// - Relevant memory (recall)
-    ///
-    /// Then appends conversation history.
-    #[must_use]
-    pub fn render(&self) -> Vec<Message> {
-        let mut system_parts = vec![self.system_directive.clone()];
+/// Configuration for generation requests.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GenerationConfig {
+    /// Temperature (0.0 = deterministic).
+    pub temperature: f32,
+    /// Maximum tokens to generate.
+    pub max_tokens: Option<u32>,
+    /// Whether to allow reasoning before JSON output.
+    pub require_reasoning: bool,
+}
 
-        // Add output format instructions
-        system_parts.push(String::from(
-            "\n### OUTPUT FORMAT ###\n\
-             Output a single JSON object with fields: kind, slots\n\
-             Example: {\"kind\":\"grant\",\"slots\":{\"to\":\"alice\",\"amount\":100}}\n\
-             Do NOT include any text before or after the JSON.",
-        ));
-
-        // Add constraints
-        if !self.constraints.is_empty() {
-            system_parts.push(String::from("\n### ACTIVE KERNEL CONSTRAINTS ###"));
-            for c in &self.constraints {
-                system_parts.push(format!("- {c}"));
-            }
+impl Default for GenerationConfig {
+    fn default() -> Self {
+        Self {
+            temperature: 0.0,
+            max_tokens: Some(1024),
+            require_reasoning: false,
         }
-
-        // Add recall
-        if !self.recall.is_empty() {
-            system_parts.push(String::from("\n### RELEVANT MEMORY (RECALL) ###"));
-            for r in &self.recall {
-                system_parts.push(format!("- {r}"));
-            }
-        }
-
-        let system_content = system_parts.join("\n");
-        let mut messages = vec![Message::system(system_content)];
-
-        // Append history
-        messages.extend(self.history.clone());
-
-        messages
     }
 }
 
@@ -171,43 +177,9 @@ pub struct Decision {
     pub meta: UsageMeta,
 }
 
-/// Configuration for generation requests.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct GenerationConfig {
-    /// Temperature (0.0 = deterministic).
-    pub temperature: f32,
-    /// Maximum tokens to generate.
-    pub max_tokens: Option<u32>,
-    /// Whether to require reasoning in output.
-    pub require_reasoning: bool,
-}
-
-impl Default for GenerationConfig {
-    fn default() -> Self {
-        Self {
-            temperature: 0.0,
-            max_tokens: Some(1024),
-            require_reasoning: false,
-        }
-    }
-}
-
-/// Errors from the cognitive layer.
-#[derive(Debug, thiserror::Error)]
-pub enum BrainError {
-    /// Transport or API error from the provider.
-    #[error("provider error: {0}")]
-    Provider(String),
-    /// Model output was not valid TDLN JSON.
-    #[error("hallucination: output was not valid TDLN: {0}")]
-    Hallucination(String),
-    /// Context window exceeded.
-    #[error("context window exceeded")]
-    ContextOverflow,
-    /// JSON parsing error.
-    #[error("parsing error: {0}")]
-    Parsing(String),
-}
+// ══════════════════════════════════════════════════════════════════════════════
+// Provider Interface
+// ══════════════════════════════════════════════════════════════════════════════
 
 /// Trait for model providers (LLM backends).
 ///
@@ -225,93 +197,148 @@ pub trait NeuralBackend: Send + Sync {
     ) -> Result<RawOutput, BrainError>;
 }
 
-/// A mock backend for testing that returns a fixed response.
-pub struct MockBackend {
-    response: String,
+// ══════════════════════════════════════════════════════════════════════════════
+// Brain: End-to-End Reasoning
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// The deterministic cognitive engine.
+///
+/// Wraps a [`NeuralBackend`] and provides the full pipeline:
+/// render → generate → strict-parse → `SemanticUnit`.
+pub struct Brain<B: NeuralBackend> {
+    backend: B,
 }
 
-impl MockBackend {
-    /// Create a mock backend with a fixed JSON response.
+impl<B: NeuralBackend> Brain<B> {
+    /// Create a new Brain with the given backend.
     #[must_use]
-    pub fn new(response: impl Into<String>) -> Self {
-        Self {
-            response: response.into(),
-        }
+    pub fn new(backend: B) -> Self {
+        Self { backend }
     }
 
-    /// Create a mock backend with a valid SemanticUnit response.
+    /// Get a reference to the backend.
     #[must_use]
-    pub fn with_intent(kind: &str, slots: serde_json::Value) -> Self {
-        let json = serde_json::json!({
-            "kind": kind,
-            "slots": slots
-        });
-        Self::new(json.to_string())
-    }
-}
-
-#[async_trait]
-impl NeuralBackend for MockBackend {
-    fn model_id(&self) -> &str {
-        "mock-tdln"
+    pub fn backend(&self) -> &B {
+        &self.backend
     }
 
-    async fn generate(
+    /// Render → Generate → Strict-parse → `SemanticUnit`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if rendering fails, the provider fails,
+    /// or the output cannot be parsed into a valid `SemanticUnit`.
+    pub async fn reason(
         &self,
-        _messages: &[Message],
-        _config: &GenerationConfig,
-    ) -> Result<RawOutput, BrainError> {
-        Ok(RawOutput {
-            content: self.response.clone(),
-            meta: UsageMeta {
-                model_id: "mock-tdln".into(),
-                input_tokens: 0,
-                output_tokens: self.response.len() as u32 / 4,
-            },
-        })
+        ctx: &CognitiveContext,
+        cfg: &GenerationConfig,
+    ) -> Result<Decision, BrainError> {
+        // 1) Render narrative
+        let msgs = prompt::render(ctx).map_err(BrainError::Render)?;
+
+        // 2) Call provider
+        let raw = self.backend.generate(&msgs, cfg).await?;
+
+        // 3) Parse & validate
+        parser::parse_decision(&raw.content, raw.meta)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use providers::local::MockBackend;
+    use serde_json::json;
 
     #[test]
-    fn render_includes_constraints() {
-        let ctx = CognitiveContext {
-            system_directive: "You are a TDLN brain.".into(),
-            recall: vec![],
-            history: vec![],
-            constraints: vec!["No transfers over 500".into()],
-        };
-        let msgs = ctx.render();
-        assert_eq!(msgs.len(), 1);
-        assert!(msgs[0].content.contains("No transfers over 500"));
+    fn message_builders() {
+        let sys = Message::system("hello");
+        assert_eq!(sys.role, "system");
+        assert_eq!(sys.content, "hello");
+
+        let usr = Message::user("hi");
+        assert_eq!(usr.role, "user");
+
+        let ast = Message::assistant("ok");
+        assert_eq!(ast.role, "assistant");
     }
 
     #[test]
-    fn render_includes_recall() {
-        let ctx = CognitiveContext {
-            system_directive: "Brain".into(),
-            recall: vec!["User balance: 420".into()],
-            history: vec![Message::user("hi")],
-            constraints: vec![],
-        };
-        let msgs = ctx.render();
-        assert_eq!(msgs.len(), 2);
-        assert!(msgs[0].content.contains("User balance: 420"));
+    fn default_config() {
+        let cfg = GenerationConfig::default();
+        assert_eq!(cfg.temperature, 0.0);
+        assert_eq!(cfg.max_tokens, Some(1024));
+        assert!(!cfg.require_reasoning);
     }
 
     #[test]
-    fn stable_render() {
+    fn cognitive_context_default() {
+        let ctx = CognitiveContext::default();
+        assert!(ctx.system_directive.is_empty());
+        assert!(ctx.recall.is_empty());
+        assert!(ctx.history.is_empty());
+        assert!(ctx.constraints.is_empty());
+    }
+
+    #[tokio::test]
+    async fn brain_reason_full_pipeline() {
+        // Create a mock backend that returns a valid SemanticUnit
+        let backend = MockBackend::with_intent("greet", json!({"name": "world"}));
+        let brain = Brain::new(backend);
+
+        // Build context
         let ctx = CognitiveContext {
-            system_directive: "Test".into(),
-            recall: vec!["mem".into()],
-            history: vec![Message::user("hello")],
-            constraints: vec!["rule".into()],
+            system_directive: "You are a helpful agent".into(),
+            recall: vec!["Previous: said hello".into()],
+            history: vec![Message::user("say hi")],
+            constraints: vec!["Be polite".into()],
         };
-        let a = ctx.render();
-        let b = ctx.render();
-        assert_eq!(a, b);
+
+        let cfg = GenerationConfig::default();
+
+        // Execute reason()
+        let decision = brain.reason(&ctx, &cfg).await.expect("reason should succeed");
+
+        // Verify the decision
+        assert_eq!(decision.intent.kind, "greet");
+        assert_eq!(decision.intent.slots.get("name").and_then(|v| v.as_str()), Some("world"));
+        assert!(decision.meta.model_id.contains("mock"));
+    }
+
+    #[tokio::test]
+    async fn brain_reason_with_reasoning_prefix() {
+        // Backend that returns reasoning + JSON
+        let response = r#"I should greet the user politely.
+
+{"kind": "respond", "slots": {"message": "Hello!"}}"#;
+        let backend = MockBackend::new(response);
+        let brain = Brain::new(backend);
+
+        let ctx = CognitiveContext {
+            system_directive: "Agent".into(),
+            ..Default::default()
+        };
+
+        let decision: Decision = brain.reason(&ctx, &GenerationConfig::default()).await.unwrap();
+
+        assert_eq!(decision.intent.kind, "respond");
+        assert!(decision.reasoning.is_some());
+        assert!(decision.reasoning.unwrap().contains("greet"));
+    }
+
+    #[tokio::test]
+    async fn brain_reason_rejects_invalid_json() {
+        let backend = MockBackend::new("This is not JSON at all");
+        let brain = Brain::new(backend);
+
+        let ctx = CognitiveContext::default();
+        let result: Result<Decision, BrainError> = brain.reason(&ctx, &GenerationConfig::default()).await;
+
+        assert!(result.is_err());
+        match result {
+            Err(BrainError::Hallucination(_)) => {} // expected - invalid JSON
+            Err(BrainError::Parsing(_)) => {} // also acceptable
+            other => panic!("Expected BrainError::Hallucination or Parsing, got {other:?}"),
+        }
     }
 }

@@ -18,6 +18,6 @@ serde_json = "1"
 ubl-types = { path = "../atomic-types", version = "0.1.0" }
 ubl-codec = { path = "../atomic-codec", version = "0.1.0" }
 ubl-crypto = { path = "../atomic-crypto", version = "0.1.0" }
-ubl-ledger = { path = "../atomic-ubl", version = "0.1.0" }
+ubl-ledger = { path = "../ubl-ledger", version = "0.1.0" }
 logline-core = { path = "../logline-core", version = "0.1.1" }
 json_atomic = { path = "../json_atomic", version = "0.1.1" }

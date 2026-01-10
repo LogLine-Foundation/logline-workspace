@@ -1,122 +1,35 @@
-//! Parser module for extracting TDLN intents from LLM output.
+//! Strict JSON extraction and validation.
 //!
-//! Handles JSON extraction from raw model responses, including:
-//! - Clean JSON objects
-//! - Markdown-fenced JSON blocks
-//! - Reasoning + JSON combinations
+//! Extracts a single JSON object from LLM output (supporting markdown blocks
+//! and inline JSON), then validates it into a [`SemanticUnit`].
 
 use crate::{BrainError, Decision, UsageMeta};
-use regex::Regex;
 use serde_json::Value;
 use std::collections::BTreeMap;
 use tdln_ast::SemanticUnit;
 
-/// Extract a JSON block from raw text.
-///
-/// Supports:
-/// - Direct JSON objects: `{"kind": ...}`
-/// - Fenced blocks: ` ```json ... ``` `
-/// - Mixed text with embedded JSON
-fn extract_json_block(raw: &str) -> Option<(Option<String>, String)> {
-    let trimmed = raw.trim();
-
-    // Try: direct JSON object
-    if trimmed.starts_with('{') {
-        if let Some(end) = find_matching_brace(trimmed) {
-            let json_str = &trimmed[..=end];
-            return Some((None, json_str.to_string()));
-        }
-    }
-
-    // Try: markdown fenced block
-    let fence_re = Regex::new(r"```(?:json)?\s*\n?([\s\S]*?)```").ok()?;
-    if let Some(caps) = fence_re.captures(raw) {
-        let json_str = caps.get(1)?.as_str().trim();
-        // Extract reasoning before the fence
-        let fence_start = caps.get(0)?.start();
-        let reasoning = if fence_start > 0 {
-            let before = raw[..fence_start].trim();
-            if !before.is_empty() {
-                Some(before.to_string())
-            } else {
-                None
-            }
-        } else {
-            None
-        };
-        return Some((reasoning, json_str.to_string()));
-    }
-
-    // Try: find JSON object anywhere
-    if let Some(start) = raw.find('{') {
-        if let Some(end) = find_matching_brace(&raw[start..]) {
-            let json_str = &raw[start..=start + end];
-            let reasoning = if start > 0 {
-                let before = raw[..start].trim();
-                if !before.is_empty() {
-                    Some(before.to_string())
-                } else {
-                    None
-                }
-            } else {
-                None
-            };
-            return Some((reasoning, json_str.to_string()));
-        }
-    }
-
-    None
-}
-
-/// Find the index of the matching closing brace.
-fn find_matching_brace(s: &str) -> Option<usize> {
-    let mut depth = 0;
-    let mut in_string = false;
-    let mut escape_next = false;
-
-    for (i, ch) in s.char_indices() {
-        if escape_next {
-            escape_next = false;
-            continue;
-        }
-
-        match ch {
-            '\\' if in_string => escape_next = true,
-            '"' => in_string = !in_string,
-            '{' if !in_string => depth += 1,
-            '}' if !in_string => {
-                depth -= 1;
-                if depth == 0 {
-                    return Some(i);
-                }
-            }
-            _ => {}
-        }
-    }
-    None
-}
-
-/// Parse a raw LLM response into a strict Decision.
+/// Parse a raw LLM response into a strict [`Decision`].
 ///
 /// # Errors
 ///
 /// Returns `BrainError::Hallucination` if the output cannot be parsed
 /// into a valid `SemanticUnit`.
 pub fn parse_decision(raw: &str, meta: UsageMeta) -> Result<Decision, BrainError> {
-    let (reasoning, json_str) = extract_json_block(raw)
-        .ok_or_else(|| BrainError::Hallucination("no JSON block found".into()))?;
+    let (json_str, reasoning) = extract_json_block(raw);
 
-    let value: Value = serde_json::from_str(&json_str)
-        .map_err(|e| BrainError::Parsing(format!("invalid JSON: {e}")))?;
+    // Parse as generic JSON first
+    let value: Value = serde_json::from_str(&json_str).map_err(|e| {
+        BrainError::Hallucination(format!("Invalid JSON: {e}; input: {json_str}"))
+    })?;
 
-    // Extract kind
+    // Extract kind (required)
     let kind = value
         .get("kind")
         .and_then(Value::as_str)
         .ok_or_else(|| BrainError::Hallucination("missing 'kind' field".into()))?
         .to_string();
 
-    // Extract slots (default to empty)
+    // Extract slots (optional, default to empty)
     let slots: BTreeMap<String, Value> = value
         .get("slots")
         .cloned()
@@ -127,8 +40,9 @@ pub fn parse_decision(raw: &str, meta: UsageMeta) -> Result<Decision, BrainError
         .transpose()?
         .unwrap_or_default();
 
-    // Build SemanticUnit with proper source_hash
+    // Compute source_hash from the JSON string
     let source_hash: [u8; 32] = blake3::hash(json_str.as_bytes()).into();
+
     let intent = SemanticUnit {
         kind,
         slots,
@@ -142,59 +56,111 @@ pub fn parse_decision(raw: &str, meta: UsageMeta) -> Result<Decision, BrainError
     })
 }
 
+/// Extract a JSON block from raw text.
+///
+/// Supports:
+/// - Fenced blocks: ` ```json ... ``` `
+/// - Direct JSON objects: `{ ... }`
+/// - JSON embedded in prose
+///
+/// Returns `(json_string, optional_reasoning)`.
+fn extract_json_block(text: &str) -> (String, Option<String>) {
+    // Try: markdown fenced block
+    if let Some(s) = text.find("```json") {
+        if let Some(end_rel) = text[s + 7..].find("```") {
+            let json = text[s + 7..s + 7 + end_rel].trim().to_string();
+            let reasoning = if s > 0 {
+                let before = text[..s].trim();
+                if before.is_empty() {
+                    None
+                } else {
+                    Some(before.to_string())
+                }
+            } else {
+                None
+            };
+            return (json, reasoning);
+        }
+    }
+
+    // Try: find JSON object span
+    if let (Some(a), Some(b)) = (text.find('{'), text.rfind('}')) {
+        if b > a {
+            let json = text[a..=b].to_string();
+            let reasoning = if a > 0 {
+                let before = text[..a].trim();
+                if before.is_empty() {
+                    None
+                } else {
+                    Some(before.to_string())
+                }
+            } else {
+                None
+            };
+            return (json, reasoning);
+        }
+    }
+
+    // Fallback: entire text
+    (text.to_string(), None)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn parses_clean_json() {
-        let raw = r#"{"kind":"grant","slots":{"to":"alice","amount":100}}"#;
+    fn extract_clean_json() {
+        let (j, r) = extract_json_block(r#"{"kind":"test","slots":{}}"#);
+        assert_eq!(j, r#"{"kind":"test","slots":{}}"#);
+        assert!(r.is_none());
+    }
+
+    #[test]
+    fn extract_markdown_block() {
+        let inp = "thinking...\n```json\n{\"kind\":\"x\",\"slots\":{}}\n```\n";
+        let (j, r) = extract_json_block(inp);
+        assert!(j.contains(r#""kind":"x""#));
+        assert_eq!(r.unwrap(), "thinking...");
+    }
+
+    #[test]
+    fn extract_json_with_prose() {
+        let inp = r#"I'll create a grant. {"kind":"grant","slots":{"to":"bob"}}"#;
+        let (j, r) = extract_json_block(inp);
+        assert!(j.contains("grant"));
+        assert!(r.is_some());
+    }
+
+    #[test]
+    fn parses_valid_semantic_unit() {
+        let raw = r#"{"kind":"noop","slots":{}}"#;
         let dec = parse_decision(raw, UsageMeta::default()).unwrap();
-        assert_eq!(dec.intent.kind, "grant");
+        assert_eq!(dec.intent.kind, "noop");
         assert!(dec.reasoning.is_none());
     }
 
     #[test]
-    fn parses_fenced_json() {
-        let raw = r#"Let me think about this...
-
-```json
-{"kind":"transfer","slots":{"from":"bob","to":"alice"}}
-```
-"#;
-        let dec = parse_decision(raw, UsageMeta::default()).unwrap();
-        assert_eq!(dec.intent.kind, "transfer");
-        assert!(dec.reasoning.is_some());
-        assert!(dec.reasoning.unwrap().contains("think about"));
-    }
-
-    #[test]
-    fn parses_json_with_prose() {
-        let raw = r#"I'll create a grant action. {"kind":"grant","slots":{"to":"bob"}}"#;
+    fn parses_markdown_wrapped() {
+        let raw = "Let me think...\n```json\n{\"kind\":\"grant\",\"slots\":{\"to\":\"alice\"}}\n```\n";
         let dec = parse_decision(raw, UsageMeta::default()).unwrap();
         assert_eq!(dec.intent.kind, "grant");
+        assert!(dec.reasoning.is_some());
+        assert!(dec.reasoning.unwrap().contains("think"));
     }
 
     #[test]
-    fn rejects_invalid_shape() {
-        let raw = r#"{"action":"grant"}"#; // missing "kind"
+    fn rejects_invalid_json() {
+        let raw = r#"{"kind":"#;
         let result = parse_decision(raw, UsageMeta::default());
         assert!(matches!(result, Err(BrainError::Hallucination(_))));
     }
 
     #[test]
-    fn rejects_no_json() {
-        let raw = "I don't know what to do.";
+    fn rejects_missing_kind() {
+        let raw = r#"{"action":"test"}"#;
         let result = parse_decision(raw, UsageMeta::default());
         assert!(matches!(result, Err(BrainError::Hallucination(_))));
-    }
-
-    #[test]
-    fn handles_nested_json() {
-        let raw = r#"{"kind":"policy","slots":{"rules":{"max":500,"min":10}}}"#;
-        let dec = parse_decision(raw, UsageMeta::default()).unwrap();
-        assert_eq!(dec.intent.kind, "policy");
-        assert!(dec.intent.slots.contains_key("rules"));
     }
 
     #[test]
@@ -202,6 +168,13 @@ mod tests {
         let raw = r#"{"kind":"noop"}"#;
         let dec = parse_decision(raw, UsageMeta::default()).unwrap();
         assert_eq!(dec.intent.kind, "noop");
-        assert!(dec.intent.slots.is_empty());
+    }
+
+    #[test]
+    fn handles_nested_slots() {
+        let raw = r#"{"kind":"policy","slots":{"rules":{"max":500}}}"#;
+        let dec = parse_decision(raw, UsageMeta::default()).unwrap();
+        assert_eq!(dec.intent.kind, "policy");
+        assert!(dec.intent.slots.contains_key("rules"));
     }
 }

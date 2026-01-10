@@ -2444,14 +2444,12 @@ dependencies = [
 
 [[package]]
 name = "tdln-brain"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
  "blake3",
- "hex",
  "json_atomic",
- "regex",
  "reqwest 0.11.27",
  "serde",
  "serde_json",
@@ -2459,6 +2457,7 @@ dependencies = [
  "thiserror 1.0.69",
  "tokio",
  "tracing",
+ "ubl-types",
 ]
 
 [[package]]
@@ -2836,6 +2835,8 @@ dependencies = [
  "async-trait",
  "bytes",
  "futures",
+ "hex",
+ "parking_lot",
  "reqwest 0.12.28",
  "schemars",
  "serde",
@@ -2847,6 +2848,7 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tracing",
+ "ubl-ledger",
 ]
 
 [[package]]

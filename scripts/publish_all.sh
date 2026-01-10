@@ -38,7 +38,7 @@ CRATES=(
   "lllv-core"
   "tdln-compiler"
   "atomic-sirp"
-  "atomic-ubl"
+  "ubl-ledger"
   "lllv-index"
   "tdln-gate"
   "atomic-runtime"

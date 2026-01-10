@@ -55,8 +55,8 @@ jobs:
       - name: atomic-sirp adversarial tests
         run: cargo test -p atomic-sirp --test wire_adversarial --release
       
-      - name: atomic-ubl ledger property tests
-        run: cargo test -p atomic-ubl --test ledger_prop --release
+      - name: ubl-ledger property tests
+        run: cargo test -p ubl-ledger --test ledger_prop --release
       
       - name: atomic-codec TLV adversarial tests
         run: cargo test -p atomic-codec --test tlv_adversarial --release

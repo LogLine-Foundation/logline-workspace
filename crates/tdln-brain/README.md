@@ -2,107 +2,100 @@
 
 **Deterministic Cognitive Layer for LogLine OS**
 
-NL → TDLN `SemanticUnit` → canonical bytes (via `json_atomic`) → happy Gate → verifiable execution.
+Render a narrative frame → call an LLM → extract **only** JSON → validate into `tdln_ast::SemanticUnit`.
 
 [![Crates.io](https://img.shields.io/crates/v/tdln-brain.svg)](https://crates.io/crates/tdln-brain)
 [![Documentation](https://docs.rs/tdln-brain/badge.svg)](https://docs.rs/tdln-brain)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## What is this?
+## Why
 
-`tdln-brain` is the cognitive shim between LLMs and the LogLine kernel. It:
-
-1. **Renders** a typed `CognitiveContext` (system directive, recall, constraints) into LLM-ready messages
-2. **Parses** model output into a strict `SemanticUnit` — or returns a hard error
-3. **Separates** reasoning from action (free-form text vs. strict JSON)
-
-### Invariants
-
-- **Strict output**: JSON that parses into a `SemanticUnit` or it's a `BrainError::Hallucination`
-- **Kernel awareness**: constraints (policies) visible before generation, reducing Gate rejections
-- **Deterministic canon**: one source of truth for canonical bytes (delegates to `json_atomic`)
+- **Prevent tool-call hallucinations**: strict JSON-only outputs
+- **Enforce determinism**: temperature 0, JSON mode when available
+- **Separate reasoning**: optional thinking goes before JSON, not mixed
+- **Machine-legible failures**: invalid output → `BrainError::Hallucination`
 
 ## Quickstart
 
 ```rust
-use tdln_brain::{CognitiveContext, Message, MockBackend, NeuralBackend, GenerationConfig, parser};
-use serde_json::json;
+use tdln_brain::{Brain, CognitiveContext, GenerationConfig};
+use tdln_brain::providers::local::LocalEcho;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // 1) Prepare cognitive context
+    let brain = Brain::new(LocalEcho);
     let ctx = CognitiveContext {
-        system_directive: "You output VALID JSON for a TDLN SemanticUnit.".into(),
-        recall: vec!["User balance: 420".into()],
-        history: vec![Message::user("grant to alice amount 100")],
-        constraints: vec!["Never transfer > 500 without approval".into()],
+        system_directive: "You are a planner".into(),
+        ..Default::default()
     };
-
-    // 2) Render messages for the model
-    let messages = ctx.render();
-
-    // 3) Use any NeuralBackend (here: mock for testing)
-    let backend = MockBackend::with_intent("grant", json!({"to": "alice", "amount": 100}));
-    let raw = backend.generate(&messages, &GenerationConfig::default()).await?;
-
-    // 4) Parse into strict Decision
-    let decision = parser::parse_decision(&raw.content, raw.meta)?;
-    
-    println!("Intent kind: {}", decision.intent.kind);
-    println!("Intent CID: {}", hex::encode(decision.intent.cid_blake3()));
-    
+    let decision = brain.reason(&ctx, &GenerationConfig::default()).await?;
+    println!("{:?}", decision.intent);
     Ok(())
 }
 ```
 
-## API Overview
+## Features
 
-### Core Types
+| Feature | Default | Description |
+|---------|---------|-------------|
+| `parsing` | ✅ | JSON extraction and validation |
+| `render` | ✅ | Narrative prompt rendering |
+| `providers-openai` | ✅ | OpenAI GPT driver |
+| `providers-anthropic` | ❌ | Anthropic Claude driver |
+| `providers-local` | ❌ | Local/mock backends |
 
-```rust
-// Cognitive context for prompt rendering
-struct CognitiveContext {
-    system_directive: String,
-    recall: Vec<String>,
-    history: Vec<Message>,
-    constraints: Vec<String>,
-}
+## Providers
 
-// Chat message
-struct Message { role: String, content: String }
-
-// Parsed decision
-struct Decision {
-    reasoning: Option<String>,
-    intent: SemanticUnit,
-    meta: UsageMeta,
-}
-```
-
-### NeuralBackend Trait
-
-Implement this to plug in any LLM:
+### OpenAI
 
 ```rust
-#[async_trait]
-trait NeuralBackend: Send + Sync {
-    fn model_id(&self) -> &str;
-    async fn generate(&self, messages: &[Message], config: &GenerationConfig) 
-        -> Result<RawOutput, BrainError>;
-}
+use tdln_brain::providers::openai::OpenAiDriver;
+
+let driver = OpenAiDriver::new(api_key, "gpt-4o-mini");
+let brain = Brain::new(driver);
 ```
 
-### Parser
+### Anthropic
 
 ```rust
-// Extract JSON from raw LLM output, parse into SemanticUnit
-fn parse_decision(raw: &str, meta: UsageMeta) -> Result<Decision, BrainError>;
+use tdln_brain::providers::anthropic::AnthropicDriver;
+
+let driver = AnthropicDriver::new(api_key, "claude-3-sonnet-20240229");
+let brain = Brain::new(driver);
 ```
 
-Handles:
-- Clean JSON: `{"kind":"grant",...}`
-- Fenced blocks: ` ```json {...} ``` `
-- Mixed prose + JSON
+### Local/Mock
+
+```rust
+use tdln_brain::providers::local::{LocalEcho, MockBackend};
+
+// Fixed noop response
+let brain = Brain::new(LocalEcho);
+
+// Custom response
+let mock = MockBackend::with_intent("grant", serde_json::json!({"to": "alice"}));
+let brain = Brain::new(mock);
+```
+
+## CognitiveContext
+
+The context controls what the model sees:
+
+```rust
+let ctx = CognitiveContext {
+    // Identity + role + boundaries
+    system_directive: "You are a finance agent.".into(),
+    
+    // Long-term memory (RAG results, user facts)
+    recall: vec!["User balance: 420".into()],
+    
+    // Recent conversation
+    history: vec![Message::user("Plan a budget")],
+    
+    // Kernel constraints (violations → gate rejection)
+    constraints: vec!["No transfers > 500".into()],
+};
+```
 
 ## Error Model
 
@@ -112,17 +105,20 @@ Handles:
 | `Hallucination(msg)` | Output not valid TDLN JSON |
 | `ContextOverflow` | Context window exceeded |
 | `Parsing(msg)` | Malformed JSON |
+| `Render(msg)` | Prompt rendering error |
 
-## Features
+## Guarantees
 
-- `default` — Core functionality
-- `http-drivers` — Includes `reqwest` for HTTP-based backends
+- ✅ `#![forbid(unsafe_code)]`
+- ✅ Strict parse: invalid JSON → `BrainError::Hallucination`
+- ✅ Optional reasoning: model can think, but JSON wins
+- ✅ Usage metadata: token counts for budgeting
 
-## Security
+## OS Integration
 
-- `#![forbid(unsafe_code)]`
-- No implicit decisions — invalid output = hard error
-- Canon chain downstream (hash at compile/proof stage, not here)
+- **With `ubl-mcp`**: feed `Decision.intent` into tool selection; preflight via Gate; audit via Ledger
+- **With `ubl-office`**: run `Brain::reason` in the OODA loop; persist to ledger; schedule Dreaming separately
+- **Token budget**: use `util::clamp_budget` to manage context windows
 
 ## License
 

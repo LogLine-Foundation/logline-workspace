@@ -17,7 +17,7 @@ exclude = [".github/**", "deny.toml", "SECURITY.md", "CODE_OF_CONDUCT.md", "CHAN
 default = []
 
 [dependencies]
-tdln-brain = { version = "0.1.0", path = "../tdln-brain" }
+tdln-brain = { version = "0.2.0", path = "../tdln-brain" }
 tdln-ast = { version = "0.1.1", path = "../tdln-ast" }
 tdln-gate = { version = "0.1.1", path = "../tdln-gate" }
 tdln-compiler = { version = "0.1.1", path = "../tdln-compiler" }
