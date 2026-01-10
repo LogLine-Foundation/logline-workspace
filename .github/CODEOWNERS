@@ -1,0 +1,29 @@
+# CODEOWNERS - LogLine Workspace
+# These owners will be requested for review when someone opens a PR
+
+# Default owners for everything
+* @danvoulez
+
+# Protocol Core
+/crates/logline-core/ @danvoulez
+/crates/json_atomic/ @danvoulez
+/crates/lllv-core/ @danvoulez
+/crates/lllv-index/ @danvoulez
+
+# TDLN Family
+/crates/tdln-*/ @danvoulez
+
+# Atomic Family
+/crates/atomic-*/ @danvoulez
+
+# UBL Family
+/crates/ubl-*/ @danvoulez
+
+# CI/CD and Infrastructure
+/.github/ @danvoulez
+/Makefile @danvoulez
+/deny.toml @danvoulez
+
+# Documentation
+/docs/ @danvoulez
+/README.md @danvoulez
