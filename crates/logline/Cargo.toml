@@ -1,6 +1,6 @@
 [package]
 name = "logline"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.75"
 description = "LogLine: full stack bundle (TDLN + JSON✯Atomic + LogLine core + LLLV) with CLI."
@@ -13,27 +13,50 @@ keywords = ["logline", "tdln", "bundle", "json-atomic", "lllv"]
 categories = ["cryptography", "data-structures", "algorithms"]
 exclude = [".github/**", "deny.toml", "SECURITY.md", "CODE_OF_CONDUCT.md", "CHANGELOG.md"]
 
+[features]
+default = ["std", "signing"]
+std = []
+server = ["dep:axum", "dep:http"]
+signing = ["atomic-ubl/signing"]
+
 [dependencies]
-tdln-gate = { path = "../tdln-gate", version = "0.1.0", features = ["dv25", "ed25519"] }
-tdln-compiler = { path = "../tdln-compiler", version = "0.1.0", features = ["dv25", "ed25519"] }
-tdln-proof = { path = "../tdln-proof", version = "0.1.0", features = ["dv25", "ed25519"] }
-tdln-ast = { path = "../tdln-ast", version = "0.1.0" }
-json-atomic = { package = "json_atomic", path = "../../json_atomic", version = "0.1.0" }
-logline-core = { path = "../../logline-core", version = "0.1.1" }
-lllv-core = { path = "../../lllv-core", version = "0.1.0" }
-lllv-index = { path = "../../lllv-index", version = "0.1.0" }
+tdln-gate = { path = "../tdln-gate", version = "0.1.1", features = ["dv25", "ed25519"] }
+tdln-compiler = { path = "../tdln-compiler", version = "0.1.1", features = ["dv25", "ed25519"] }
+tdln-proof = { path = "../tdln-proof", version = "0.1.1", features = ["dv25", "ed25519"] }
+tdln-ast = { path = "../tdln-ast", version = "0.1.1" }
+json-atomic = { package = "json_atomic", path = "../json_atomic", version = "0.1.1" }
+logline-core = { path = "../logline-core", version = "0.1.1" }
+lllv-core = { path = "../lllv-core", version = "0.1.1" }
+lllv-index = { path = "../lllv-index", version = "0.1.1" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 hex = "0.4"
-
-[features]
-default = ["std"]
-std = []
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+walkdir = "2"
+regex = "1"
+colored = "2"
+axum = { version = "0.7", optional = true }
+http = { version = "1", optional = true }
+atomic-types = { path = "../atomic-types", version = "0.3.1" }
+atomic-codec = { path = "../atomic-codec", version = "0.3.1" }
+atomic-crypto = { path = "../atomic-crypto", version = "0.3.1" }
+atomic-ubl = { path = "../atomic-ubl", version = "0.3.1" }
+atomic-sirp = { path = "../atomic-sirp", version = "0.3.1" }
 
 [package.metadata.docs.rs]
 features = ["std"]
 no-default-features = false
 all-features = true
+
+[dev-dependencies]
+tempfile = "3"
+hex = "0.4"
+
+[package.metadata.paper]
+url = "https://papers.logline.foundation/blog/paper-I-logline-protocol"
 
 [[bin]]
 name = "logline"

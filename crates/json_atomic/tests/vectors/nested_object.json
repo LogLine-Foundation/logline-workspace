@@ -1,0 +1,19 @@
+{
+  "description": "Nested object with arrays - keys sorted at each level, arrays preserved",
+  "input": {
+    "a_first": "should come first",
+    "array": [
+      3,
+      1,
+      2
+    ],
+    "nested": {
+      "a": 1,
+      "b": 2
+    },
+    "z_last": "should come last"
+  },
+  "expected_canon_hex": "7b22615f6669727374223a2273686f756c6420636f6d65206669727374222c226172726179223a5b332c312c325d2c226e6573746564223a7b2261223a312c2262223a327d2c227a5f6c617374223a2273686f756c6420636f6d65206c617374227d",
+  "expected_cid_hex": "53aebf94abab427ade51b7011c2967069c407acc2d404c9cf74094dc50c93a28",
+  "note": null
+}

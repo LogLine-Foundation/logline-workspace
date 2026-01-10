@@ -1,0 +1,49 @@
+[package]
+name = "atomic-sirp"
+version = "0.3.1"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+keywords = ["logline", "sirp", "http", "hmac", "capsule"]
+categories = ["network-programming", "asynchronous", "cryptography"]
+description = "SIRP HTTP stable: capsule+receipt, HMAC, idempotency, server."
+rust-version = "1.75"
+homepage.workspace = true
+repository.workspace = true
+documentation = "https://docs.rs/atomic-sirp"
+
+[features]
+default = ["std", "http", "server", "sqlite", "signing"]
+std = []
+http = ["dep:reqwest", "dep:http"]
+server = ["dep:axum", "dep:tokio", "dep:http"]
+sqlite = ["dep:rusqlite", "dep:chrono"]
+signing = []
+libp2p-stub = []
+
+[dependencies]
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_bytes = "0.11"
+base64 = "0.22"
+blake3 = "1"
+ed25519-dalek = "2"
+thiserror = "1"
+atomic-types = { path = "../atomic-types" }
+atomic-codec = { path = "../atomic-codec" }
+atomic-crypto = { path = "../atomic-crypto" }
+json_atomic = { path = "../json_atomic" }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"], optional = true }
+http = { version = "1", optional = true }
+axum = { version = "0.7", optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"], optional = true }
+rusqlite = { version = "0.31", features = ["bundled"], optional = true }
+chrono = { version = "0.4", features = ["clock"], optional = true }
+
+[dev-dependencies]
+rand = "0.8"
+hex = "0.4"
+proptest = "1"
+
+[package.metadata.paper]
+url = "https://papers.logline.foundation/blog/paper-V-sirp"

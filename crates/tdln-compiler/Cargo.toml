@@ -1,6 +1,6 @@
 [package]
 name = "tdln-compiler"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.75"
 license = "MIT"
@@ -21,19 +21,18 @@ ed25519 = ["tdln-proof/ed25519"]
 dv25 = ["tdln-proof/dv25", "dep:logline-core"]
 
 [dependencies]
-tdln-ast = { version = "0.1.0", path = "../tdln-ast" }
-tdln-proof = { version = "0.1.0", path = "../tdln-proof" }
+tdln-ast = { version = "0.1.1", path = "../tdln-ast" }
+tdln-proof = { version = "0.1.1", path = "../tdln-proof" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 blake3 = "1.5"
 thiserror = "1.0"
-json-atomic = { package = "json_atomic", version = "0.1.0" }
 logline-core = { version = "0.1.1", optional = true }
-
-[dev-dependencies]
-proptest = "1"
 
 [package.metadata.docs.rs]
 features = ["std"]
 no-default-features = false
 all-features = false
+
+[package.metadata.paper]
+url = "https://papers.logline.foundation/blog/paper-IV-tdln"

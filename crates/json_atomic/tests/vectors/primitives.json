@@ -1,0 +1,21 @@
+{
+  "description": "All JSON primitive types (integers only, no floats)",
+  "input": {
+    "array_val": [
+      1,
+      "two",
+      null
+    ],
+    "false_val": false,
+    "null_val": null,
+    "number_val": 42,
+    "object_val": {
+      "key": "value"
+    },
+    "string_val": "hello",
+    "true_val": true
+  },
+  "expected_canon_hex": "7b2261727261795f76616c223a5b312c2274776f222c6e756c6c5d2c2266616c73655f76616c223a66616c73652c226e756c6c5f76616c223a6e756c6c2c226e756d6265725f76616c223a34322c226f626a6563745f76616c223a7b226b6579223a2276616c7565227d2c22737472696e675f76616c223a2268656c6c6f222c22747275655f76616c223a747275657d",
+  "expected_cid_hex": "e1f072165a8761c1356f3ed855727cc0617f48452dbf34ed0d4be2db28a928f8",
+  "note": null
+}

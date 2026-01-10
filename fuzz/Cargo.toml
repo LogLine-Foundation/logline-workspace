@@ -1,0 +1,50 @@
+[package]
+name = "logline-fuzz"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "MIT"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+
+# Crates to fuzz
+json_atomic = { path = "../crates/json_atomic" }
+atomic-codec = { path = "../crates/atomic-codec" }
+atomic-sirp = { path = "../crates/atomic-sirp", default-features = false }
+atomic-ubl = { path = "../crates/atomic-ubl", default-features = false }
+atomic-crypto = { path = "../crates/atomic-crypto" }
+atomic-types = { path = "../crates/atomic-types" }
+serde_json = "1"
+
+[[bin]]
+name = "fuzz_json_canonize"
+path = "fuzz_targets/json_canonize.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_tlv_decode"
+path = "fuzz_targets/tlv_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_sirp_decode"
+path = "fuzz_targets/sirp_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_ubl_entry"
+path = "fuzz_targets/ubl_entry.rs"
+test = false
+doc = false
+bench = false

@@ -1,8 +1,11 @@
-//! TDLN Compiler — NL/DSL → AST + Canonical JSON + ProofBundle (deterministic).
+//! TDLN Compiler — NL/DSL → AST + Canonical JSON + `ProofBundle` (deterministic).
 //!
 //! Determinism: same input + same rule set → same outputs (AST, canon, CID).
 
 #![forbid(unsafe_code)]
+
+#[cfg(feature = "dv25")]
+use logline_core as _;
 
 use blake3::Hasher;
 use serde::{Deserialize, Serialize};
@@ -32,6 +35,12 @@ pub struct CompiledIntent {
     pub proof: ProofBundle,
 }
 
+/// Compila intent em AST + JSON canônico + prova.
+///
+/// # Errors
+///
+/// - `CompileError::Empty` se a entrada estiver vazia ou só whitespace
+/// - `CompileError::Internal` reservado para futuras falhas internas
 pub fn compile(input: &str, ctx: &CompileCtx) -> Result<CompiledIntent, CompileError> {
     if input.trim().is_empty() {
         return Err(CompileError::Empty);

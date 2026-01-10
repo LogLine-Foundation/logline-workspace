@@ -5,6 +5,9 @@
 
 #![forbid(unsafe_code)]
 
+#[cfg(feature = "dv25")]
+use logline_core as _;
+
 use blake3::Hasher;
 use serde::{Deserialize, Serialize};
 use tdln_ast::SemanticUnit;
@@ -58,7 +61,7 @@ pub fn build_proof(
     }
 }
 
-/// Digest that is signed/verified (ast_cid || canon_cid || rules_applied as bytes).
+/// Digest that is signed/verified (`ast_cid` || `canon_cid` || `rules_applied` as bytes).
 fn bundle_digest(bundle: &ProofBundle) -> [u8; 32] {
     let mut h = Hasher::new();
     h.update(&bundle.ast_cid);
@@ -77,6 +80,10 @@ pub fn sign(bundle: &mut ProofBundle, sk: &SigningKey) {
 }
 
 /// Verifies determinism & integrity relationships within the bundle (shape-level).
+///
+/// # Errors
+///
+/// - `ProofError::Invalid` se os CIDs estiverem zerados
 pub fn verify_proof(bundle: &ProofBundle) -> Result<(), ProofError> {
     // Minimal sanity: CIDs are non-zero, rules list stable
     if bundle.ast_cid == [0; 32] || bundle.canon_cid == [0; 32] {
@@ -86,6 +93,12 @@ pub fn verify_proof(bundle: &ProofBundle) -> Result<(), ProofError> {
 }
 
 #[cfg(feature = "ed25519")]
+/// Verifica as assinaturas associadas ao bundle.
+///
+/// # Errors
+///
+/// - `ProofError::NoSignature` se nenhuma assinatura estiver presente
+/// - `ProofError::VerifyFailed` se qualquer assinatura falhar a verificação
 pub fn verify_signatures(bundle: &ProofBundle, keys: &[VerifyingKey]) -> Result<(), ProofError> {
     if bundle.signatures.is_empty() {
         return Err(ProofError::NoSignature);

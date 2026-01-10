@@ -1,0 +1,7 @@
+{
+  "description": "Edge case: empty object",
+  "input": {},
+  "expected_canon_hex": "7b7d",
+  "expected_cid_hex": "6e46dd10defc9b56c29a6ec56b508c21f54c08192194e4df25bf36f0c9c3c279",
+  "note": null
+}

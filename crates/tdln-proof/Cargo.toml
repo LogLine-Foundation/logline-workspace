@@ -1,6 +1,6 @@
 [package]
 name = "tdln-proof"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.75"
 license = "MIT"
@@ -21,7 +21,7 @@ ed25519 = ["dep:ed25519-dalek"]
 dv25 = ["ed25519", "dep:logline-core"]
 
 [dependencies]
-tdln-ast = { version = "0.1.0", path = "../tdln-ast" }
+tdln-ast = { version = "0.1.1", path = "../tdln-ast" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 blake3 = "1.5"
@@ -30,10 +30,10 @@ thiserror = "1.0"
 ed25519-dalek = { version = "2.1", features = ["pkcs8"], optional = true }
 logline-core = { version = "0.1.1", optional = true }
 
-[dev-dependencies]
-rand = "0.8"
-
 [package.metadata.docs.rs]
 features = ["std", "ed25519"]
 no-default-features = false
 all-features = false
+
+[package.metadata.paper]
+url = "https://papers.logline.foundation/blog/paper-IV-tdln"

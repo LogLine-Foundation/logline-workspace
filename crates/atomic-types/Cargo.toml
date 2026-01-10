@@ -1,0 +1,29 @@
+[package]
+name = "atomic-types"
+version = "0.3.1"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Atomic types: IDs + DIM, Display/FromStr, validator & helpers."
+rust-version = "1.75"
+homepage.workspace = true
+repository.workspace = true
+documentation = "https://docs.rs/atomic-types"
+keywords = ["logline", "identity", "ulid", "dim", "ids"]
+categories = ["data-structures", "cryptography"]
+
+[features]
+default = ["std"]
+std = []
+ulid = ["dep:ulid"]
+strict = ["dep:regex"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+cfg-if = "1"
+regex = { version = "1", optional = true }
+ulid = { version = "1", optional = true }
+hex = "0.4"
+thiserror = "1.0"
+
+[dev-dependencies]
+serde_json = "1.0"

@@ -1,0 +1,51 @@
+[package]
+name = "json_atomic"
+version = "0.1.1"
+edition = "2021"
+description = "The Cryptographic Atom — JSON✯Atomic: canonicalization + BLAKE3 content addressing + DV25-Seal (Ed25519) for Signed Facts"
+license = "MIT"
+repository = "https://github.com/LogLine-Foundation/logline-workspace"
+readme = "README.md"
+keywords = ["canonicalization", "cryptography", "signed-fact", "zero-trust", "verifiable"]
+categories = ["cryptography", "encoding"]
+resolver = "2"
+rust-version = "1.75"
+documentation = "https://docs.rs/json_atomic"
+homepage = "https://logline.foundation"
+
+[package.metadata.paper]
+url = "https://papers.logline.foundation/blog/paper-II-Json-atomic"
+
+[features]
+default = ["std", "unicode"]
+std = []
+# Planejado p/ v0.1.1: suporte "alloc" (no_std) real para canonicalização sem serde_json std
+alloc = []
+unicode = ["dep:unicode-normalization"]
+
+[dependencies]
+# Integração direta com o átomo conceitual
+logline-core = { version = "0.1.1", features = ["serde"] }
+
+# Criptografia & hash
+blake3 = "1.5"
+ed25519-dalek = "2.1"
+
+# Canônica & serialização
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+unicode-normalization = { version = "0.1", optional = true }
+hex = "0.4"
+thiserror = "1.0"
+
+[dev-dependencies]
+criterion = "0.5"
+proptest = "1"
+
+[[bench]]
+name = "canonicalize"
+harness = false
+
+[[bench]]
+name = "seal"
+harness = false

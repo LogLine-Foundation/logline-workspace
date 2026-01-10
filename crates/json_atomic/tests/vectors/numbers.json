@@ -1,0 +1,13 @@
+{
+  "description": "Integer edge cases - positive, negative, zero, large",
+  "input": {
+    "large": 9007199254740991,
+    "min_safe": -9007199254740991,
+    "negative": -42,
+    "positive": 42,
+    "zero": 0
+  },
+  "expected_canon_hex": "7b226c61726765223a393030373139393235343734303939312c226d696e5f73616665223a2d393030373139393235343734303939312c226e65676174697665223a2d34322c22706f736974697665223a34322c227a65726f223a307d",
+  "expected_cid_hex": "92ea405b8f7f6bd4c824c0d9f3e07dc4630df5f8113b1cbcf9f355679dac267d",
+  "note": null
+}

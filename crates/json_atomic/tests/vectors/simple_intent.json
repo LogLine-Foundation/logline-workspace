@@ -1,0 +1,11 @@
+{
+  "description": "Simple intent with sorted keys",
+  "input": {
+    "amount": 100,
+    "intent": "Grant",
+    "to": "alice"
+  },
+  "expected_canon_hex": "7b22616d6f756e74223a3130302c22696e74656e74223a224772616e74222c22746f223a22616c696365227d",
+  "expected_cid_hex": "579d3b5a477792bc8e2e1baf03bcf344f61e9fc8aa5c1b5562b28fbcf7fed233",
+  "note": null
+}

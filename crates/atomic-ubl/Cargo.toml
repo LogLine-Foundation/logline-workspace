@@ -1,0 +1,53 @@
+[package]
+name = "atomic-ubl"
+version = "0.3.1"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Universal Ledger (NDJSON) with async writer, WAL, verify."
+rust-version = "1.75"
+homepage.workspace = true
+repository.workspace = true
+documentation = "https://docs.rs/atomic-ubl"
+keywords = ["logline", "ledger", "ubl", "atomic", "ndjson"]
+categories = ["database-implementations", "cryptography", "data-structures"]
+
+[features]
+default = ["std", "signing"]
+std = []
+signing = []
+metrics = ["dep:metrics"]
+async = ["dep:tokio"]
+
+[dependencies]
+anyhow = "1"
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_bytes = "0.11"
+time = { version = "0.3", features = ["serde", "formatting"] }
+fs2 = "0.4"
+base64 = "0.22"
+blake3 = "1"
+ed25519-dalek = "2"
+parking_lot = "0.12"
+once_cell = "1"
+
+atomic-types = { path = "../atomic-types" }
+atomic-codec = { path = "../atomic-codec" }
+atomic-crypto = { path = "../atomic-crypto" }
+json_atomic = { path = "../json_atomic" }
+logline-core = { path = "../logline-core" }
+
+tokio = { version = "1", features = ["fs", "rt-multi-thread", "sync", "io-util"], optional = true }
+metrics = { version = "0.24", optional = true }
+
+[dev-dependencies]
+tempfile = "3"
+proptest = "1"
+
+[package.metadata.paper]
+url = "https://papers.logline.foundation/blog/paper-VI-ubl"
+
+[package.metadata.docs.rs]
+features = ["std"]
+no-default-features = false

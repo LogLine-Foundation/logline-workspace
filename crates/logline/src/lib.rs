@@ -1,7 +1,10 @@
-//! LogLine bundle: re-exports the full stack (TDLN + JSON✯Atomic + LogLine core + LLLV).
+//! `LogLine` bundle: re-exports the full stack (TDLN + JSON✯Atomic + `LogLine` core + LLLV).
 //! Add `logline` as a single dependency to get the whole set.
 
 #![forbid(unsafe_code)]
+#![allow(clippy::multiple_crate_versions)]
+
+pub mod cli;
 
 pub use tdln_ast as ast;
 pub use tdln_compiler as compiler;

@@ -1,0 +1,11 @@
+{
+  "description": "Unicode emoji, escaped quotes, and newlines",
+  "input": {
+    "emoji": "🔐",
+    "newline": "line1\nline2",
+    "quote": "He said \"hello\""
+  },
+  "expected_canon_hex": "7b22656d6f6a69223a22f09f9490222c226e65776c696e65223a226c696e65315c6e6c696e6532222c2271756f7465223a2248652073616964205c2268656c6c6f5c22227d",
+  "expected_cid_hex": "47d65de99d747db226cdf35f7b5e639b933f80883495f65ac975064a77c6f039",
+  "note": null
+}

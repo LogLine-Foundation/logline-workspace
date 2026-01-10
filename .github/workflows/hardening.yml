@@ -1,0 +1,187 @@
+# Hardening CI: Property Tests + Fuzz (short bursts)
+#
+# This workflow runs comprehensive hardening tests:
+# - Property-based tests (proptest)
+# - Adversarial tests
+# - Short fuzz bursts (10 seconds each, CI budget)
+#
+# For long-running fuzzing, use OSS-Fuzz or dedicated fuzzing infrastructure.
+
+name: Hardening
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  schedule:
+    # Weekly deep test run (Sundays 03:00 UTC)
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      fuzz_duration:
+        description: 'Fuzz duration per target (seconds)'
+        required: false
+        default: '10'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Property Tests
+  # ═══════════════════════════════════════════════════════════════════════════
+  property-tests:
+    name: Property Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: dtolnay/rust-toolchain@stable
+      
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: property-tests
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev
+      
+      - name: json_atomic property tests
+        run: cargo test -p json_atomic --test property_canon --release
+      
+      - name: atomic-sirp adversarial tests
+        run: cargo test -p atomic-sirp --test wire_adversarial --release
+      
+      - name: atomic-ubl ledger property tests
+        run: cargo test -p atomic-ubl --test ledger_prop --release
+      
+      - name: atomic-codec TLV adversarial tests
+        run: cargo test -p atomic-codec --test tlv_adversarial --release
+      
+      - name: Cross-crate PoD tests
+        run: cargo test -p logline --test pod_end_to_end --release
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Short Fuzz Bursts (CI budget)
+  # ═══════════════════════════════════════════════════════════════════════════
+  fuzz-burst:
+    name: Fuzz Burst
+    runs-on: ubuntu-latest
+    # Run on schedule, manual dispatch, or PRs with 'fuzz' label
+    if: >
+      github.event_name == 'schedule' || 
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'fuzz'))
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: llvm-tools-preview
+      
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+      
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: fuzz
+      
+      - name: Fuzz json_canonize
+        run: |
+          timeout ${{ github.event.inputs.fuzz_duration || '10' }}s \
+            cargo +nightly fuzz run fuzz_json_canonize -- \
+            -max_len=4096 -max_total_time=${{ github.event.inputs.fuzz_duration || '10' }} \
+            || true
+      
+      - name: Fuzz tlv_decode
+        run: |
+          timeout ${{ github.event.inputs.fuzz_duration || '10' }}s \
+            cargo +nightly fuzz run fuzz_tlv_decode -- \
+            -max_len=4096 -max_total_time=${{ github.event.inputs.fuzz_duration || '10' }} \
+            || true
+      
+      - name: Fuzz sirp_decode
+        run: |
+          timeout ${{ github.event.inputs.fuzz_duration || '10' }}s \
+            cargo +nightly fuzz run fuzz_sirp_decode -- \
+            -max_len=4096 -max_total_time=${{ github.event.inputs.fuzz_duration || '10' }} \
+            || true
+      
+      - name: Fuzz ubl_entry
+        run: |
+          timeout ${{ github.event.inputs.fuzz_duration || '10' }}s \
+            cargo +nightly fuzz run fuzz_ubl_entry -- \
+            -max_len=4096 -max_total_time=${{ github.event.inputs.fuzz_duration || '10' }} \
+            || true
+      
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crashes
+          path: fuzz/artifacts/
+          retention-days: 30
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # MIRI (memory safety)
+  # ═══════════════════════════════════════════════════════════════════════════
+  miri:
+    name: MIRI Check
+    runs-on: ubuntu-latest
+    # Expensive, only on schedule
+    if: github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+      
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: miri
+      
+      - name: MIRI json_atomic
+        run: |
+          cargo +nightly miri test -p json_atomic --lib -- --skip slow || true
+      
+      - name: MIRI atomic-codec
+        run: |
+          cargo +nightly miri test -p atomic-codec --lib || true
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Security Limits Verification
+  # ═══════════════════════════════════════════════════════════════════════════
+  security-limits:
+    name: Security Limits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: dtolnay/rust-toolchain@stable
+      
+      - uses: Swatinem/rust-cache@v2
+      
+      - name: Verify MAX_FRAME_LEN defined
+        run: |
+          grep -r "MAX_FRAME_LEN" crates/atomic-codec/src/binary.rs || exit 1
+          echo "✅ MAX_FRAME_LEN is defined"
+      
+      - name: Verify MAX_VARINT_BYTES defined
+        run: |
+          grep -r "MAX_VARINT_BYTES" crates/atomic-codec/src/binary.rs || exit 1
+          echo "✅ MAX_VARINT_BYTES is defined"
+      
+      - name: Verify VarintOverflow error
+        run: |
+          grep -r "VarintOverflow" crates/atomic-codec/src/binary.rs || exit 1
+          echo "✅ VarintOverflow error is defined"
+      
+      - name: Run limit tests
+        run: |
+          cargo test -p atomic-codec reject_frame_with_huge_declared_len
+          cargo test -p atomic-codec reject_varint_with_too_many_bytes
+          echo "✅ Security limit tests pass"

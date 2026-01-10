@@ -5,6 +5,9 @@
 
 #![forbid(unsafe_code)]
 
+#[cfg(feature = "dv25")]
+use logline_core as _;
+
 use serde::{Deserialize, Serialize};
 use tdln_compiler::CompiledIntent;
 use thiserror::Error;
@@ -41,6 +44,11 @@ pub struct PolicyCtx {
     pub allow_freeform: bool,
 }
 
+/// Pré-validação determinística.
+///
+/// # Errors
+///
+/// - Retorna `GateError::Invalid` para entradas inválidas (reservado)
 pub fn preflight(intent: &CompiledIntent, _ctx: &PolicyCtx) -> Result<GateOutput, GateError> {
     // Minimal deterministic audit
     let audit = serde_json::json!({
@@ -64,11 +72,17 @@ pub struct Consent {
     pub accepted: bool,
 }
 
+/// Decide a partir do consentimento e contexto.
+///
+/// # Errors
+///
+/// - Propaga `GateError::Invalid` para entradas inválidas (reservado)
 pub fn decide(
     intent: &CompiledIntent,
     consent: &Consent,
     ctx: &PolicyCtx,
 ) -> Result<GateOutput, GateError> {
+    // Deterministic decision with audit trail
     let mut out = preflight(intent, ctx)?;
     let decision = if consent.accepted && ctx.allow_freeform {
         Decision::Allow

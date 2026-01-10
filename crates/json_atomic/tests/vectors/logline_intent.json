@@ -1,0 +1,21 @@
+{
+  "description": "Realistic LogLine intent - Grant permission scenario",
+  "input": {
+    "action": "read",
+    "conditions": {
+      "ip_range": "10.0.0.0/8",
+      "require_mfa": true,
+      "valid_until": "2026-12-31T23:59:59Z"
+    },
+    "context": {
+      "request_id": "req_abc123",
+      "tenant": "acme-corp"
+    },
+    "intent": "Grant",
+    "object": "document:budget-2026.xlsx",
+    "subject": "alice@company.com"
+  },
+  "expected_canon_hex": "7b22616374696f6e223a2272656164222c22636f6e646974696f6e73223a7b2269705f72616e6765223a2231302e302e302e302f38222c22726571756972655f6d6661223a747275652c2276616c69645f756e74696c223a22323032362d31322d33315432333a35393a35395a227d2c22636f6e74657874223a7b22726571756573745f6964223a227265715f616263313233222c2274656e616e74223a2261636d652d636f7270227d2c22696e74656e74223a224772616e74222c226f626a656374223a22646f63756d656e743a6275646765742d323032362e786c7378222c227375626a656374223a22616c69636540636f6d70616e792e636f6d227d",
+  "expected_cid_hex": "38face5d16b48afbfee1d6372aab6b906de95d561d1d97e83b77808b7afb4123",
+  "note": null
+}
