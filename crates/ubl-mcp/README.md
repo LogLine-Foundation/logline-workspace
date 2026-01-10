@@ -1,6 +1,6 @@
 # ubl-mcp
 
-**Secure Model Context Protocol for LogLine Agents**
+**Secure, Audited Model Context Protocol for LogLine Agents**
 
 MCP tools, but with a kernel: policy-first, audit-ready, and boringly predictable.
 
@@ -10,40 +10,57 @@ MCP tools, but with a kernel: policy-first, audit-ready, and boringly predictabl
 
 ## What is this?
 
-`ubl-mcp` is a clean implementation of the Model Context Protocol (JSON-RPC 2.0) that routes every tool call through your TDLN Gate. It's the "universal IO bus" for your agents — interop with the MCP ecosystem without giving the model a foot-gun.
+`ubl-mcp` is a clean implementation of the Model Context Protocol (JSON-RPC 2.0) with integrated policy gates and audit logging. It's the "universal IO bus" for your agents — interop with the MCP ecosystem without giving the model a foot-gun.
 
-### Why this exists
+### Security Model
 
-Tooling is where agents get hurt:
-- "Try calling delete_repo lol" — no thanks.
-- Shadow state and ad-hoc logs — unverifiable.
-- Each tool wrapper a snowflake — not scalable.
+```text
+┌─────────────┐     ┌──────────────┐     ┌──────────────┐     ┌─────────────┐
+│ Agent Brain ├────▶│ PolicyGate   ├────▶│ Transport    ├────▶│ MCP Server  │
+└─────────────┘     │ (permit/deny)│     │ (stdio/http) │     └──────┬──────┘
+                    └──────────────┘     └──────────────┘            │
+                           │                                         │
+                           ▼                                         ▼
+                    ┌──────────────┐                          ┌─────────────┐
+                    │ AuditSink    │                          │ Tool Result │
+                    │ (UBL Ledger) │                          └─────────────┘
+                    └──────────────┘
+```
 
-We fix it with three invariants:
 1. **Gate-before-IO**: tool calls are proposals → Gate decides Permit/Deny/Challenge
-2. **Canonical Intent**: calls carry a tiny, canonicalized Intent body (TDLN)
+2. **Auditable**: every call (success, failure, or blocked) is recorded
 3. **Schema-first**: tools declare their input schema (via schemars)
+
+## Features
+
+| Feature | Default | Description |
+|---------|---------|-------------|
+| `client` | ✅ | MCP client with SecureToolCall |
+| `server` | ✅ | MCP server with schema-first tools |
+| `transport-stdio` | ✅ | stdio transport (line-delimited JSON) |
+| `transport-http` | ❌ | HTTP transport |
+| `gate-tdln` | ❌ | TDLN Gate integration |
+| `audit` | ❌ | UBL Ledger audit sink |
 
 ## Quickstart
 
 ### Client (Gate-aware)
 
 ```rust
-use ubl_mcp::{McpClient, MockTransport, GateContext, ToolResult};
+use ubl_mcp::{McpClient, gate::AllowAll, audit::NoAudit, client::MockEndpoint};
 use serde_json::json;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let transport = MockTransport::with_result(ToolResult::text("Hello!"));
-    let client = McpClient::new(transport);
-    
-    let gate_ctx = GateContext {
-        allow_freeform: true,
-        pre_consented: true, // Skip consent for this call
-    };
+    let client = McpClient::new(
+        AllowAll,                           // Gate: permit all (use custom for production)
+        NoAudit,                            // Audit: disabled (use TracingAudit or UblAudit)
+        MockEndpoint::with_text("Hello!"),  // Endpoint: mock for testing
+    );
 
     let result = client
-        .call_tool_secure("echo", json!({"msg": "hello"}), &gate_ctx)
+        .tool("echo", json!({"text": "hello"}))
+        .execute()
         .await?;
     
     println!("Result: {:?}", result);
@@ -63,18 +80,9 @@ struct EchoArgs {
     text: String,
 }
 
-#[derive(Deserialize, JsonSchema)]
-struct SumArgs {
-    a: i64,
-    b: i64,
-}
-
 let server = ServerBuilder::new("my-tools")
     .tool("echo", "Echo text back", |args: EchoArgs| async move {
         Ok(ToolResult::text(args.text))
-    })
-    .tool("sum", "Add two integers", |args: SumArgs| async move {
-        Ok(ToolResult::text((args.a + args.b).to_string()))
     })
     .build();
 
@@ -83,47 +91,49 @@ let tools = server.list_tools();
 println!("Available tools: {}", tools.len());
 ```
 
+### Custom Gate (block destructive operations)
+
+```rust
+use ubl_mcp::gate::{PolicyGate, GateDecision};
+use async_trait::async_trait;
+use serde_json::Value;
+
+struct SafeGate;
+
+#[async_trait]
+impl PolicyGate for SafeGate {
+    async fn decide(&self, tool: &str, _args: &Value) -> GateDecision {
+        if tool.starts_with("delete") || tool.starts_with("drop") {
+            GateDecision::Deny { reason: "destructive operations blocked".into() }
+        } else {
+            GateDecision::Permit
+        }
+    }
+}
+```
+
 ## API Overview
 
-### Protocol Types
+### Gate Types
 
-```rust
-// JSON-RPC 2.0
-struct JsonRpcRequest { id, method, params }
-struct JsonRpcResponse { id, result?, error? }
+| Gate | Behavior |
+|------|----------|
+| `AllowAll` | Permits everything (testing) |
+| `DenyAll` | Blocks everything (testing) |
+| `AllowlistGate` | Permits only listed tools |
+| `DenylistGate` | Blocks only listed tools |
+| `TdlnGate` | TDLN policy evaluation (requires `gate-tdln`) |
 
-// MCP
-struct ToolDefinition { name, description?, inputSchema }
-struct ToolResult { content: Vec<ContentBlock>, isError? }
-enum ContentBlock { Text { text }, Image { data, mimeType }, Resource { uri, ... } }
-```
+### Audit Sinks
 
-### Client
+| Sink | Behavior |
+|------|----------|
+| `NoAudit` | Discards all records |
+| `TracingAudit` | Logs via tracing |
+| `MemoryAudit` | Stores in memory (testing) |
+| `UblAudit` | Writes to UBL Ledger (requires `audit`) |
 
-```rust
-impl McpClient<T: McpTransport> {
-    // Gate-first tool execution
-    async fn call_tool_secure(&self, tool: &str, args: Value, gate_ctx: &GateContext) 
-        -> Result<ToolResult, McpError>;
-    
-    // List available tools
-    async fn list_tools(&self) -> Result<Vec<ToolDefinition>, McpError>;
-}
-```
-
-### Server
-
-```rust
-impl ServerBuilder {
-    fn tool<Args: JsonSchema + DeserializeOwned, F, Fut>(
-        self, name: &str, description: &str, handler: F
-    ) -> Self;
-    
-    fn build(self) -> McpServer;
-}
-```
-
-## Error Model
+### Error Model
 
 | Error | Meaning |
 |-------|---------|
@@ -132,17 +142,24 @@ impl ServerBuilder {
 | `PolicyViolation(msg)` | Gate denied the call |
 | `Transport(msg)` | IO or connection error |
 
-## Features
+## Examples
 
-- `client` — MCP client with Gate enforcement (default)
-- `server` — MCP server with schema-first tools (default)
+```bash
+# Run echo example
+cargo run -p ubl-mcp --example echo
+```
 
 ## Security
 
 - `#![forbid(unsafe_code)]`
-- Gate-before-IO: every call goes through TDLN Gate
+- Gate-before-IO: every call goes through PolicyGate
+- Audit trail: all calls recorded via AuditSink
 - Schema validation via schemars
-- Size and time caps (defaults are conservative)
+
+## Status
+
+- **v0.2.0**: PolicyGate trait, AuditSink trait, SecureToolCall pattern
+- **v0.1.0**: Basic client/server, TDLN Gate
 
 ## License
 

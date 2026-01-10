@@ -5,7 +5,9 @@
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::json;
-use ubl_mcp::{GateContext, McpClient, MockTransport, ServerBuilder, ToolResult};
+use ubl_mcp::{
+    audit::NoAudit, client::MockEndpoint, gate::AllowAll, McpClient, ServerBuilder, ToolResult,
+};
 
 #[derive(Deserialize, JsonSchema)]
 struct EchoArgs {
@@ -26,18 +28,17 @@ async fn main() -> anyhow::Result<()> {
         println!("- {} : {:?}", tool.name, tool.description);
     }
 
-    // 2) Simulate a tool call via mock transport
-    let transport = MockTransport::with_result(ToolResult::text("Echo: hello world"));
-    let client = McpClient::new(transport);
-
-    let gate_ctx = GateContext {
-        allow_freeform: true,
-        pre_consented: true,
-    };
+    // 2) Simulate a tool call via mock endpoint
+    let client = McpClient::new(
+        AllowAll,
+        NoAudit,
+        MockEndpoint::with_text("Echo: hello world"),
+    );
 
     println!("\n=== Client Call ===");
     let result = client
-        .call_tool_secure("echo", json!({"text": "hello world"}), &gate_ctx)
+        .tool("echo", json!({"text": "hello world"}))
+        .execute()
         .await?;
 
     for block in result.content {
