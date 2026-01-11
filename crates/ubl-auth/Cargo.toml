@@ -1,0 +1,50 @@
+[package]
+name = "ubl-auth"
+version = "0.7.0"
+edition.workspace = true
+license.workspace = true
+readme = "README.md"
+description = "UBL ID in one crate: pure-Rust JWT/JWKS verify + optional issuer server (did:web, JWKS, OIDC discovery, /oauth/token) and embedded rollout assets."
+repository.workspace = true
+documentation = "https://docs.rs/ubl-auth"
+keywords = ["oidc","oauth2","jwt","jwks","openid","ed25519","did","did-web","webauthn","wasm","edge","federation"]
+categories = ["authentication","cryptography","web-programming::http-server","wasm"]
+
+[features]
+default = []
+server = ["dep:axum","dep:tokio","dep:tower-http","dep:uuid","dep:sha2"]
+assets = []
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+time = { version = "0.3", features = ["formatting","parsing"] }
+base64 = "0.22"
+
+# Optional deps used by the server feature
+axum = { version = "0.7", optional = true, features = ["macros"] }
+tokio = { version = "1", optional = true, features = ["rt-multi-thread","macros"] }
+tower-http = { version = "0.5", optional = true, features = ["cors"] }
+uuid = { version = "1", optional = true, features = ["v4"] }
+ed25519-dalek = { version = "2", features = ["pkcs8", "pem"] }
+sha2 = { version = "0.10", optional = true }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[badges]
+docsrs = {}
+
+[lib]
+name = "ubl_auth"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ubl-auth-issuer"
+path = "src/bin/issuer.rs"
+required-features = ["server"]
+
+[package.metadata.docs.rs]
+all-features = true
+targets = ["x86_64-unknown-linux-gnu","wasm32-unknown-unknown"]
+rustdoc-args = ["--cfg","docsrs"]

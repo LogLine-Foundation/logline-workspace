@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "action.v1",
+  "type": "object",
+  "required": ["kind","who","trace","data"],
+  "properties": {
+    "kind": { "const": "action.v1" },
+    "who": {
+      "type": "object",
+      "properties": {
+        "did": { "type": ["string","null"] },
+        "key_id": { "type": ["string","null"] },
+        "legacy_id": { "type": ["string","null"] }
+      }
+    },
+    "trace": {
+      "type": "object",
+      "properties": {
+        "seq": { "type": "integer" },
+        "ts": { "type": "string" },
+        "trace_id": { "type": ["string","null"] },
+        "jwt_jti": { "type": ["string","null"] }
+      },
+      "required": ["seq","ts"]
+    },
+    "data": { "type": "object" }
+  }
+}
