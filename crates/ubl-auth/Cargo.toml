@@ -7,7 +7,7 @@ readme = "README.md"
 description = "UBL ID in one crate: pure-Rust JWT/JWKS verify + optional issuer server (did:web, JWKS, OIDC discovery, /oauth/token) and embedded rollout assets."
 repository.workspace = true
 documentation = "https://docs.rs/ubl-auth"
-keywords = ["oidc","oauth2","jwt","jwks","openid","ed25519","did","did-web","webauthn","wasm","edge","federation"]
+keywords = ["oidc", "jwt", "jwks", "did-web", "ed25519"]
 categories = ["authentication","cryptography","web-programming::http-server","wasm"]
 
 [features]
